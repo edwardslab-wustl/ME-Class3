@@ -1,0 +1,8 @@
+#Requirements for ME-Class3
+sklearn >= 0.18
+numpy
+scipy
+pysam
+pandas
+matplotlib
+
