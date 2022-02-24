@@ -1269,17 +1269,4 @@ def main():
     funct(args)
 
 if __name__ == '__main__':
-    import sys
-    import os
-    import argparse
-    import scipy
-    import scipy.interpolate
-    import scipy.ndimage.filters
-    import numpy as np
-    import pandas as pd
-    import resource
-    import gc
-    import math
-    from sklearn.ensemble import RandomForestClassifier
-    from sklearn.model_selection import KFold
     main()
