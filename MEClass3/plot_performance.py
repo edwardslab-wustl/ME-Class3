@@ -85,7 +85,7 @@ def main():
         legend = csv_file.split('.')[0]+'.'+csv_file.split('.')[1]
         #
         dfi = pd.read_csv(csv_file).set_index('gene_id-sample_name')
-        expression = dfi['Expr_value'].tolist() 
+        expression = dfi['expr_value'].tolist() 
         gene_ID = dfi['gene_id'].tolist()
         predictions = dfi['prob_up'].tolist()
         #
