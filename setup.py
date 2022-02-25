@@ -41,7 +41,7 @@ setup(name='meclass3',
         entry_points = {
             "console_scripts": [
                 "meclass3=MEClass3.entry:main",
-                "meclass3_eval=MEClass3.eval_entry:main",
+                "meclass3_plot=MEClass3.plot_entry:main",
                 ],
             },
         include_package_data=True,

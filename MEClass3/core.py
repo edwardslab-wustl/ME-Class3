@@ -16,6 +16,8 @@ import gc
 import math
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
+from sklearn.metrics import f1_score
+from sklearn.metrics import accuracy_score
 
 #---------------------------------------------------------------------------
 
@@ -286,7 +288,7 @@ def print_tup(inp_tup, noftf, seperation, end_chr):
         noftf.write(seperation.join(str(dat) for dat in inp_tup) + end_chr)
 
 #---------------------------------------------------------------------------
-def exec_proc_sample():
+def exec_proc_sample(args):
     #
     ctp_fofn = args.ctp_inp
     path_to_output = args.pto_inp
@@ -340,7 +342,7 @@ def exec_proc_sample():
         del df1_bed, df2_bed, df_merged
 
 #---------------------------------------------------------------------------
-def exec_filter():
+def exec_filter(args):
 
     # Try keeping format fixed to ['gene_id', 'chrom', 'chromStart', 'chromEnd', 'strand', 'code_info', 'name', 'description']
     #
@@ -384,7 +386,7 @@ def exec_filter():
     df_expr.to_csv(output_expr_file_name, sep='\t', na_rep='NA', float_format='%.3f') #, header=None)
 
 #---------------------------------------------------------------------------
-def exec_proc_reg():
+def exec_proc_reg(args):
 
     # This part of code consolidates regions from different cell-type predictions.
     # Input is standard .bedgraph
@@ -455,7 +457,7 @@ def exec_proc_reg():
 
         df_chrom_cons[chrom].to_csv(path_to_output+'/enhc_bed/'+chrom+'_all_cell_type_cons.bed', sep='\t', index=False, header=None)
 #---------------------------------------------------------------------------
-def exec_proximity_list():
+def exec_proximity_list(args):
 
     # This part of code generate proximity list of regulatory elements
     # add orientation relative to TSS, in addition to n and p.
@@ -579,7 +581,7 @@ def exec_proximity_list():
     for i in range(n_sidx, n_eidx+1):
         dict_flnm['n_end_'+str(i)].close()
 #---------------------------------------------------------------------------
-def exec_interp():
+def exec_interp(args):
     #
     num_intrp_point = args.nip_inp
     reg_fofn = args.rfn_inp
@@ -874,7 +876,7 @@ def exec_interp():
     for file_id, out_lines in dict_re_out.items():
         open(file_id+'_'+args.tag_inp+'_re_interp.csv', 'w').write(''.join(out_lines))
 #---------------------------------------------------------------------------
-def exec_merge_features():
+def exec_merge_features(args):
     
     # Merge features.
     p_sidx = args.pst_inp # 1
@@ -922,7 +924,7 @@ def exec_merge_features():
     df_merged.to_csv('interp_merged.csv', sep=',')
 
 #---------------------------------------------------------------------------
-def exec_setup_expr():
+def exec_setup_expr(args):
     #
     interp_file = args.intrp_inp
     expr_file = args.expr_inp
@@ -972,36 +974,36 @@ def exec_setup_expr():
     # Remove Duplicates
 #    df_interp = df_interp.groupby(df_interp.index).first()
     #
-    df_interp['Expr_value'] = 0.0  # Float type
-    df_interp['Expr_flag'] = 0      # int type
+    df_interp['expr_value'] = 0.0  # Float type
+    df_interp['expr_flag'] = 0      # int type
     # 
     for gene_item in df_interp.index:
     #    print(gene_item)
         try:
-            df_interp.loc[gene_item, 'Expr_value'] = df_expr.loc[ gene_item.split('-')[0], gene_item.split('-')[1] ]
+            df_interp.loc[gene_item, 'expr_value'] = df_expr.loc[ gene_item.split('-')[0], gene_item.split('-')[1] ]
         except KeyError:
             sys.stdout.write(gene_item.split('-')[0]+' not found in expression file.\n')
-            df_interp.loc[gene_item, 'Expr_value'] = 0
+            df_interp.loc[gene_item, 'expr_value'] = 0
         #
     if args.dexpr_flag == 0: # me-class demo
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] > 0, 1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] < 0, -1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] =  df_interp['Expr_flag'].astype(int)
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0, 1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0, -1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
     #
     if args.dexpr_flag == 1: # me-class paper
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] >= 2, 1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] <= -2, -1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] =  df_interp['Expr_flag'].astype(int)
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= 2, 1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -2, -1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
     #
     if args.dexpr_flag == 2:
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] > 0.0, 1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] = np.where( df_interp['Expr_value'] < 0.0, -1, df_interp['Expr_flag'] )
-        df_interp['Expr_flag'] = df_interp['Expr_flag'].astype(int)
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0.0, 1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0.0, -1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] = df_interp['expr_flag'].astype(int)
     #
     # Finally write data for classifier
     df_interp.to_csv('interp_expr_data.csv', sep=',')
 #---------------------------------------------------------------------------
-def exec_run_clf():
+def exec_run_clf(args):
     #
     # Load data csv file
     df = ( pd.read_csv(args.dfi_inp) ).set_index('gene_id-sample_name')
@@ -1046,14 +1048,14 @@ def exec_run_clf():
         #
         #----------------------------------------------------------------------
         # Count number of up and down for test set
-        test_expr_flag_value_count = df_loso[ df_loso['sample_name'].isin(sample_name_test_list) ]['Expr_flag'].value_counts()
+        test_expr_flag_value_count = df_loso[ df_loso['sample_name'].isin(sample_name_test_list) ]['expr_flag'].value_counts()
         num_up_test = pd.Series(test_expr_flag_value_count)[1]
         num_dn_test = pd.Series(test_expr_flag_value_count)[-1]
         sys.stdout.write('# of up regulated in test set = '+str(num_up_test)+'\n')
         sys.stdout.write('# of down regulated in test set = '+str(num_dn_test)+'\n\n')
         #
         # Normalize up and down regulated for train samples
-        train_expr_flag_value_count = df_loso[ df_loso['sample_name'].isin(sample_name_train_list) ]['Expr_flag'].value_counts()
+        train_expr_flag_value_count = df_loso[ df_loso['sample_name'].isin(sample_name_train_list) ]['expr_flag'].value_counts()
         #    
         try:
             num_up = pd.Series(train_expr_flag_value_count)[1]
@@ -1068,19 +1070,19 @@ def exec_run_clf():
         sys.stdout.write('# of down regulated in train set= '+str(num_dn)+'\n\n')
         #
         if num_up > num_dn:
-            idx = df_loso.index[ (df_loso['Expr_flag'] == 1) & df_loso['sample_name'].isin(sample_name_train_list) ]
-            df_loso.at[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'Expr_flag'] = 0
-        #    df_loso.set_value(np.random.choice(idx, size=(num_up-num_dn), replace=False), 'Expr_flag', 0)
+            idx = df_loso.index[ (df_loso['expr_flag'] == 1) & df_loso['sample_name'].isin(sample_name_train_list) ]
+            df_loso.at[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag'] = 0
+        #    df_loso.set_value(np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag', 0)
             del idx
         #
         elif num_dn > num_up:
-            idx = df_loso.index[ (df_loso['Expr_flag'] == -1) & df_loso['sample_name'].isin(sample_name_train_list) ]
-            df_loso.at[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'Expr_flag'] = 0
-        #    df_loso.set_value(np.random.choice(idx, size=(num_dn-num_up), replace=False), 'Expr_flag', 0)
+            idx = df_loso.index[ (df_loso['expr_flag'] == -1) & df_loso['sample_name'].isin(sample_name_train_list) ]
+            df_loso.at[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag'] = 0
+        #    df_loso.set_value(np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag', 0)
             del idx            
         #
         # Count again after normalization
-        train_expr_flag_value_count_norm = df_loso[ df_loso['sample_name'].isin(sample_name_train_list) ]['Expr_flag'].value_counts()
+        train_expr_flag_value_count_norm = df_loso[ df_loso['sample_name'].isin(sample_name_train_list) ]['expr_flag'].value_counts()
         num_up_norm = pd.Series(train_expr_flag_value_count_norm)[1]
         num_dn_norm = pd.Series(train_expr_flag_value_count_norm)[-1]
         tot_items_norm = num_up_norm + num_dn_norm
@@ -1093,7 +1095,7 @@ def exec_run_clf():
         #
         gene_id_list = np.asarray( list( set( df_loso[ df_loso['sample_name'].isin(sample_name_test_list) ]['gene_id'].tolist() ) ) ) # me-class
 #        gene_id_list = list(set( df_loso[ df_loso['sample_name'].isin(sample_name_test_list) ]['gene_id'].tolist() )) # me-class
-#        gene_id_list = np.asarray( set( df_loso[ ((df_kf.Expr_flag==-1) | (df_kf.Expr_flag==1)) \
+#        gene_id_list = np.asarray( set( df_loso[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) \
 #                & df_loso['sample_name'].isin(sample_name_train_list) ]['gene_id'].tolist() ) ) # 
 #        gene_id_list = np.asarray( set( df_loso['gene_id'].tolist() ) )
         kf = KFold(n_splits=10, shuffle=args.suf_inp) # 10 fold #shuffle=True in me-class
@@ -1109,14 +1111,14 @@ def exec_run_clf():
             I_train, I_test = gene_id_list[train_index], gene_id_list[test_index]
             #
             # Mark train set 
-            idx = df_kf.index[ ((df_kf.Expr_flag==-1) | (df_kf.Expr_flag==1)) & \
+            idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & \
                     df_kf['sample_name'].isin(sample_name_train_list) & ~df_kf['gene_id'].isin(I_test) ]
             df_kf.at[idx, 'clf_flag'] = 'train'
             #df_kf.set_value(idx, 'clf_flag', 'train')
             del idx
             #    
             # Mark test set
-            idx = df_kf.index[ ((df_kf.Expr_flag==-1) | (df_kf.Expr_flag==1)) & \
+            idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & \
                     df_kf['sample_name'].isin(sample_name_test_list) & df_kf['gene_id'].isin(I_test) ]
             df_kf.at[idx, 'clf_flag'] = 'test'
             #df_kf.set_value(idx, 'clf_flag', 'test')
@@ -1134,7 +1136,7 @@ def exec_run_clf():
             if args.fsl_inp == 3: # RE
                 features = df_kf_train.columns[pd.Series(df_kf_train.columns).str.startswith('fre')]
             #
-            y_train = df_kf_train['Expr_flag'].values
+            y_train = df_kf_train['expr_flag'].values
             #
             #Setup classifier and run it
             clf = RandomForestClassifier(n_estimators=args.ntr_inp, n_jobs=args.npr_inp) # me-class 1001 default
@@ -1186,8 +1188,98 @@ def exec_run_clf():
     open(args.tag_inp+'_fi_out.txt', 'w').write(''.join(dfi_items))
     
 #---------------------------------------------------------------------------
-def main():
+def exec_eval(args):
 
+    df = pd.read_csv( args.dfi_inp, index_col=[0] ).reset_index(drop=True)
+    steps = args.steps_inp
+    #
+    output_file_name = ((args.dfi_inp).strip('.csv'))+'_acc_rej.txt'
+    #
+    df['expr_pred'] = df['expr_pred'].astype(int)
+    totalGenes = 0
+    totalGenes_P = 0
+    totalGenes_N = 0
+    #
+    totalGenes = df['gene_id'].count()
+    #
+    expr_flag_value_count = df['expr_flag'].value_counts()
+    try:
+            totalGenes_P = pd.Series(expr_flag_value_count)[1]
+    except KeyError:
+            totalGenes_P = 0
+    try:
+            totalGenes_N = pd.Series(expr_flag_value_count)[-1]
+    except KeyError:
+            totalGenes_N = 0
+    #
+    gene_count_90_per_acc = 0
+    gene_count_85_per_acc = 0
+    gene_count_80_per_acc = 0
+    gene_count_75_per_acc = 0
+    #
+    output_file = open(output_file_name,'w')
+    #
+    for threshold in np.linspace(0,0.5,steps):
+        #
+        TP_P = 0
+        TP_N = 0
+        numGenes_P = 0
+        numGenes_N = 0
+        #
+        df_tmp = df[ (df['prob_up'] >= 1-threshold) | (df['prob_dw'] >= 1-threshold) ]
+        #
+        #
+        df_tmp_P = df_tmp[ (df_tmp['prob_up'] >= 1-threshold) ]
+        numGenes_P = df_tmp_P['gene_id'].count()
+        df_tmp_P = df_tmp_P[ (df_tmp_P['expr_flag'] == 1) & (df_tmp_P['expr_pred'] == 1) ]
+        TP_P = df_tmp_P['gene_id'].count()
+        #
+        df_tmp_N = df_tmp[ (df_tmp['prob_dw'] >= 1-threshold) ]
+        numGenes_N = df_tmp_N['gene_id'].count()
+        df_tmp_N = df_tmp_N[ ( df_tmp_N['expr_flag'] == -1 ) & (df_tmp_N['expr_pred'] == -1) ]
+        TP_N = df_tmp_N['gene_id'].count()
+        #sys.stdout.write( str(threshold)+'\t'+str(numGenes_P)+'\t'+str(TP_P)+'\t'+str(numGenes_N)+'\t'+str(TP_N)+'\n')
+        #
+        df_tmp = df_tmp.iloc[0:0]
+        df_tmp_P = df_tmp_P.iloc[0:0]
+        df_tmp_N = df_tmp_N.iloc[0:0]
+        #
+        accuracy = 0
+        rejectRate = 0
+        #
+        if (numGenes_P + numGenes_N) > 0:
+                accuracy = float(TP_P + TP_N) / float(numGenes_P + numGenes_N)
+        if totalGenes > 0:
+                rejectRate = float(numGenes_P + numGenes_N) / float(totalGenes)
+        #
+        if ( accuracy >= 0.90) :
+                gene_count_90_per_acc = ( numGenes_P + numGenes_N )
+        if ( accuracy >= 0.85) :
+                gene_count_85_per_acc = ( numGenes_P + numGenes_N )
+        if ( accuracy >= 0.80) :
+                gene_count_80_per_acc = ( numGenes_P + numGenes_N )
+        if ( accuracy >= 0.75) :
+                gene_count_75_per_acc = ( numGenes_P + numGenes_N )
+        #
+        output_file.write(str(threshold)+'\t'+str(rejectRate)+'\t'+str(accuracy)+'\t'+str( numGenes_P + numGenes_N )+'\n')
+
+    output_file.close()
+
+    y_true = df['expr_flag'].tolist()
+    y_pred = df['expr_pred'].tolist()
+
+    sys.stdout.write( 'F1 Score (macro):\t'+str( (f1_score(y_true, y_pred, average='macro') ))+'\n' )
+    sys.stdout.write( 'F1 Score (micro):\t'+str( (f1_score(y_true, y_pred, average='micro') ))+'\n' )
+    sys.stdout.write( 'Accuracy score:\t'+str( accuracy_score(y_true, y_pred) )+'\n' )
+    sys.stdout.write( '#Genes with >90% accuracy:\t'+str( gene_count_90_per_acc )+'\n' )
+    sys.stdout.write( '#Genes with >85% accuracy:\t'+str( gene_count_85_per_acc )+'\n' )
+    sys.stdout.write( '#Genes with >80% accuracy:\t'+str( gene_count_80_per_acc )+'\n' )
+    sys.stdout.write( '#Genes with >75% accuracy:\t'+str( gene_count_75_per_acc )+'\n' )
+    sys.stdout.write( '#Total_Genes:\t'+str( totalGenes )+'\n' )
+
+#---------------------------------------------------------------------------
+
+def main():
     FUNCTION_MAP = {
             'proc_sample'        : exec_proc_sample,
             'filter'        : exec_filter,
@@ -1196,11 +1288,12 @@ def main():
             'interp'        : exec_interp,
             'merge_features'    : exec_merge_features,
             'setup_expr'        : exec_setup_expr,
-            'run_clf'        : exec_run_clf
+            'run_clf'        : exec_run_clf,
+            'eval'          : exec_eval
             }
 
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest='command', required=True)
+    subparsers = parser.add_subparsers(dest='command')
 
     sp_filter = subparsers.add_parser('filter', help='Filter argument')
     sp_filter.add_argument('-expr', action='store', dest='expr_inp', help='Name of first file')
@@ -1256,14 +1349,18 @@ def main():
     sp_setup_expr.add_argument('-efv', action='store', dest='efv_inp', type=float, default=5.0, help='Expression floor value')
     sp_setup_expr.add_argument('-def', action='store', dest='dexpr_flag', type=int, default=1, help='Method for differential expression')
 
-    sp_run_clf = subparsers.add_parser('run_clf', help='run clf argument')
+    sp_run_clf = subparsers.add_parser('run_clf', help='Run classification argument')
     sp_run_clf.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from interpolation step')
     sp_run_clf.add_argument('-ntr', action='store', dest='ntr_inp', type=int, default=5001, help='Number of trees for Random Forest Classifier')
     sp_run_clf.add_argument('-npr', action='store', dest='npr_inp', type=int, default=8, help='Number of Processors for RF run')
     sp_run_clf.add_argument('-tag', action='store', dest='tag_inp', default='test', help='Tag for Output Writing')
     sp_run_clf.add_argument('-fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
     sp_run_clf.add_argument('-suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
-    
+   
+    sp_eval = subparsers.add_parser('eval', help='Evaluation argument')
+    sp_eval.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from classification')
+    sp_eval.add_argument('-nstp', action='store', dest='steps_inp', type=int, default=101, help='Number of steps')
+ 
     args = parser.parse_args()
     funct = FUNCTION_MAP[args.command]
     funct(args)
