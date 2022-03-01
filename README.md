@@ -92,3 +92,8 @@ Clone and install with pip:
 	-fsl	:	Feature Selection. 1: TSS; 2: TSS+RE, 3: RE.
 	-suf	:	Shuffle true ot false. (default=True)
 
+7. Run evaluation.
+
+	This module prints some useful matrices such as F1 score, accuracy, number of genes with high accuracy.
+
+	-dfi	: Output file from classification step. 
