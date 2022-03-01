@@ -32,9 +32,9 @@ Clone and install with pip:
 
 	This module processes fractional methylaton files and generates differentail methylation files. 
 
-    -ctp	: Cell type Fofn (Please refer to example data). 
-    -pto	: Path to Output.
-    -expr	: Name of expression file. Samples without expression information will be omitted.
+	-ctp	: Cell type Fofn (Please refer to example data). 
+	-pto	: Path to Output.
+	-expr	: Name of expression file. Samples without expression information will be omitted.
 
 2. Generate proximity list:
 
@@ -51,10 +51,10 @@ Clone and install with pip:
 	This module addes gene and enhancer features togather.
 
 	-pst    :   (+)end start index.
-    -ped    :   (+)end end index.
-    -nst    :   (-)end start index.
-    -ned    :   (-)end end index.
-    -tif    :   TSS interpolation file.
+	-ped    :   (+)end end index.
+	-nst    :   (-)end start index.
+	-ned    :   (-)end end index.
+	-tif    :   TSS interpolation file.
 
 4. Interpolation.
 	
