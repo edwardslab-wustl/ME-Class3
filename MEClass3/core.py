@@ -395,6 +395,7 @@ def exec_proximity_list(args):
     p_eidx = args.ped_inp # 2
     n_sidx = args.nst_inp # 1
     n_eidx = args.ned_inp # 2
+    twin = args.twin_inp
     gene_list_file = args.glf_inp
     path_to_input = os.getcwd()
 
@@ -461,7 +462,7 @@ def exec_proximity_list(args):
         cnt_ne = 0
         for info in dict_bed[chrom][ (dict_bed[chrom+'_idx'].get( int(int(tx_start)/delimiter), 1))-1 : ]:
         #    if info[0] > int(tx_end):
-            if info[0] > int( tss+5000 ):
+            if info[0] > int( tss+twin ):
                 cnt_ne += 1
                 if cnt_ne in range (n_sidx, n_eidx+1):
                     if strand == '+':
@@ -480,17 +481,17 @@ def exec_proximity_list(args):
         for info in dict_bed[chrom][ (dict_bed[chrom+'_idx'].get( int(int(tx_start)/delimiter), 1))-1 : ]: 
             # Notice -2 here: This may give key error -> fix it later # fixed
         #    if info[1] < int(tx_start):
-            if info[1] < int( tss-5000 ):
+            if info[1] < int( tss-twin ):
                 prev_index = dict_bed[chrom].index(info)
                 continue
         #    if info[1] >= int(tx_start):
-            if info[1] >= int( tss-5000 ):
+            if info[1] >= int( tss-twin ):
                 p_search_index = prev_index
                 break
         cnt_pe = 0
         for info in reversed( dict_bed[chrom][ : p_search_index+2 ] ):
         #    if info[1] < int(tx_start):
-            if info[1] < int( tss-5000 ):
+            if info[1] < int( tss-twin ):
                 cnt_pe += 1
                 if cnt_pe in range(p_sidx, p_eidx+1):
                     if strand == '+':
@@ -1390,6 +1391,7 @@ def main():
     sp_proximity_list.add_argument('-ped', action='store', dest='ped_inp', type=int, default=2, help='pend end index')
     sp_proximity_list.add_argument('-nst', action='store', dest='nst_inp', type=int, default=1, help='nend start index')
     sp_proximity_list.add_argument('-ned', action='store', dest='ned_inp', type=int, default=2, help='nend end index')
+    sp_proximity_list.add_argument('-twn', action='store', dest='twin_inp', type=int, default=5000, help='nend end index')
     sp_proximity_list.add_argument('-glf', action='store', dest='glf_inp', help='gene list file')
 
     sp_merge_features = subparsers.add_parser('merge_features', help='merge features argument')
