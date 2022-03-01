@@ -32,9 +32,9 @@ Clone and install with pip:
 
 	This module processes fractional methylaton files and generates differentail methylation files. 
 
-	-ctp	: Cell type Fofn (Please refer to example data). 
-	-pto	: Path to Output.
-	-expr	: Name of expression file. Samples without expression information will be omitted.
+	-ctp	:	Cell type Fofn (Please refer to example data). 
+	-pto	:	Path to Output.
+	-expr	:	Name of expression file. Samples without expression information will be omitted.
 
 2. Generate proximity list:
 
@@ -50,11 +50,11 @@ Clone and install with pip:
 		
 	This module addes gene and enhancer features togather.
 
-	-pst    :   (+)end start index.
-	-ped    :   (+)end end index.
-	-nst    :   (-)end start index.
-	-ned    :   (-)end end index.
-	-tif    :   TSS interpolation file.
+	-pst    :	(+)end start index.
+	-ped    :	(+)end end index.
+	-nst    :	(-)end start index.
+	-ned    :	(-)end end index.
+	-tif    :	TSS interpolation file.
 
 4. Interpolation.
 	
@@ -75,7 +75,7 @@ Clone and install with pip:
 	-mmg	:	Minimum CpGs assayed. (default=40)
 	-mmr	:	Minimum CpGs assayed. (default=2 )
 
-4. Add expression information.
+5. Add expression information.
 
 	-intrp	:	Interpolation CSV file.
 	-expr	:	Expression file.
@@ -83,7 +83,7 @@ Clone and install with pip:
 	-efv	:	Expression floor value. (default=5.0)
 	-def	:	Method for differential expression. (default=1)
 
-5. Run classification.
+6. Run classification.
 
 	-dfi	:	Interpolation-expression dataframe.
 	-ntr	:	Number of trees for Random Forest Classifier. (default=5001)
