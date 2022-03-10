@@ -1147,6 +1147,11 @@ def exec_eval(args):
     #
     output_file = open(output_file_name,'w')
     #
+    sample_names = list( set( df['sample_name'].tolist() ) )
+    init_gene_values = [0] * len( sample_names )
+    sample_freq_90 = sample_freq_85 = sample_freq_80 = sample_freq_75  = pd.Series( init_gene_values, index=sample_names ) 
+    gene_count_90_per_acc, gene_count_85_per_acc, gene_count_80_per_acc, gene_count_75_per_acc = 0, 0, 0, 0
+    #
     for threshold in np.linspace(0,0.5,steps):
         #
         TP_P = 0
@@ -1206,23 +1211,35 @@ def exec_eval(args):
     #
     sys.stdout.write( '#Genes with >90% accuracy:\t'+str( gene_count_90_per_acc )+'\n' )
     with open( tag+'_genes_with_90_percent_accuracy.txt', 'w') as output_90per:
-        for sample in sample_freq_90.keys():
-            output_90per.write( str(pd.Series( sample_freq_90 )[sample]) +'\t'+ sample +'\n' )
+        for sample in sample_names:
+            try:
+                output_90per.write( str(pd.Series( sample_freq_90 )[sample]) +'\t'+ sample +'\n' )
+            except KeyError:
+                output_90per.write( str(0) +'\t'+ sample +'\n' )
     #
     sys.stdout.write( '#Genes with >85% accuracy:\t'+str( gene_count_85_per_acc )+'\n' )
     with open( tag+'_genes_with_85_percent_accuracy.txt', 'w') as output_85per:
-        for sample in sample_freq_85.keys():
-            output_85per.write( str(pd.Series( sample_freq_85 )[sample]) +'\t'+ sample +'\n' )
+        for sample in sample_names:
+            try:
+                output_85per.write( str(pd.Series( sample_freq_85 )[sample]) +'\t'+ sample +'\n' )
+            except KeyError:
+                output_85per.write( str(0) +'\t'+ sample +'\n' )
     #
     sys.stdout.write( '#Genes with >80% accuracy:\t'+str( gene_count_80_per_acc )+'\n' )
     with open( tag+'_genes_with_80_percent_accuracy.txt', 'w') as output_80per:
-        for sample in sample_freq_80.keys():
-            output_80per.write( str(pd.Series( sample_freq_80 )[sample]) +'\t'+ sample +'\n' )
+        for sample in sample_names:
+            try:
+                output_80per.write( str(pd.Series( sample_freq_80 )[sample]) +'\t'+ sample +'\n' )
+            except KeyError:
+                output_80per.write( str(0) +'\t'+ sample +'\n' )
     #
     sys.stdout.write( '#Genes with >75% accuracy:\t'+str( gene_count_75_per_acc )+'\n' )
     with open( tag+'_genes_with_75_percent_accuracy.txt', 'w') as output_75per:
-        for sample in sample_freq_75.keys():
-            output_75per.write( str(pd.Series( sample_freq_75 )[sample]) +'\t'+ sample +'\n' )
+        for sample in sample_names:
+            try:
+                output_75per.write( str(pd.Series( sample_freq_75 )[sample]) +'\t'+ sample +'\n' )
+            except KeyError:
+                output_75per.write( str(0) +'\t'+ sample +'\n' )
 
     sys.stdout.write( '#Total_Genes:\t'+str( totalGenes )+'\n' )
 
