@@ -31,11 +31,10 @@ setup(name='meclass3',
         ],
         install_requires=[
             'numpy',
+            'pandas'
             'sklearn',
             'scipy',
             'matplotlib',
-            'pysam',
-            'biopython',
         ],
         python_requires='>=2.6, !=3.0.*, !=3.1.*, !=3.2.*, <4',
         entry_points = {
