@@ -2,9 +2,10 @@
 
 ## Requirements
  * Python Packages
-     *  numpy
-     *  pysam
-     *  biopython
+     *  Numpy
+     *  Pandas
+     *  Scipy
+     *  Sklearn
 
 ## Installation
 Clone and install with pip:
