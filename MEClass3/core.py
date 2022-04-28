@@ -33,6 +33,8 @@ class Interpolation:
         self.re_flnk_len = args.refl_inp
         self.re_flnk_fetrs = args.reff_inp    
         #
+        self.flankNorm = args.flankNorm
+        #
         self.reg = reg_type
         self.strand = strand
         self.reg_start = reg_start
@@ -225,13 +227,13 @@ class Interpolation:
 
     def dat_proc( self ):
         #
-        if args.flankNorm:
+        if self.flankNorm:
             self.x = range( self.lower_lim, self.upper_lim+1, 1 )
             self.dmet_flnrm = self.flank_zscore_normalize_values()
             #print(self.dmet_flnrm)
             self.cpos_dmet_intrp = self.interpolate_processed_data( self.cpos_raw, self.dmet_flnrm, self.x )
         
-        if not args.flankNorm:
+        if not self.flankNorm:
             self.x = range( self.interp_start, self.interp_end+1, 1 )
             # Trim data beyond interp_start and interp_end 
             self.cpos_dmet_corr = self.endpoint_correction( self.interp_start, \
