@@ -34,6 +34,7 @@ class Interpolation:
         self.re_flnk_fetrs = args.reff_inp    
         #
         self.flankNorm = args.flankNorm
+        self.fixedReFlnk = args.fixedReFlnk
         #
         self.reg = reg_type
         self.strand = strand
@@ -247,7 +248,7 @@ class Interpolation:
             self.pre_dwnsmpl_dmet_intrp.append(self.cpos_dmet_intrp[pos])
         #
         # Downsampling. Each point represents average over a range.
-        if self.reg == 're' and args.fixedReFlnk:
+        if self.reg == 're' and self.fixedReFlnk:
             # This part fixes number of features from flanking regions of re.
             #
             self.pre_dwnsmpl_dmet_intrp = np.array( self.pre_dwnsmpl_dmet_intrp )
@@ -967,7 +968,7 @@ def exec_run_clf(args):
     #===============================================
     if args.ss:
         #
-        if args.ngnorm:
+        if args.gnorm:
             # Normalize up and down
             expr_flag_value_count = df['expr_flag'].value_counts()
             num_up = pd.Series(expr_flag_value_count)[1]
@@ -1048,7 +1049,7 @@ def exec_run_clf(args):
             sys.stdout.write(", ".join(sample_name_train_list)+'\n')
             #
             #----------------------------------------------------------------------
-            if args.ngnorm:
+            if args.gnorm:
                 # Count number of up and down for test set
                 test_expr_flag_value_count = df_loso[ df_loso['sample_name'].isin(sample_name_test_list) ]['expr_flag'].value_counts()
                 num_up_test = pd.Series(test_expr_flag_value_count)[1]
@@ -1539,7 +1540,7 @@ def main():
     sp_run_clf.add_argument('-fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
     sp_run_clf.add_argument('-suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
     sp_run_clf.add_argument('-ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
-    sp_run_clf.add_argument('-ngnorm', action='store_false', dest='ngnorm', default=True, help='Single sample or not') 
+    sp_run_clf.add_argument('-ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
 
    
     sp_eval = subparsers.add_parser('eval', help='Evaluation argument')
