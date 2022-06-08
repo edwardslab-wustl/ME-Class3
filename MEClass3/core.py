@@ -18,6 +18,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
+import gzip
+import re
 
 #---------------------------------------------------------------------------
 
@@ -633,9 +635,12 @@ def exec_interp(args):
         dict_bed = {}
         sys.stdout.write(sample_id+'\n')
         #
-        with open(sample_file, 'r') as bed_file:
-            bed_file_lines = bed_file.readlines()
-        bed_file.close()
+        if re.search(".gz$", sample_file):
+            with gzip.open(sample_file, 'r') as bed_file:
+                bed_file_lines = bed_file.readlines()
+        else:
+            with open(sample_file, 'r') as bed_file:
+                bed_file_lines = bed_file.readlines()
         #
         chr_track = 'chr00'
         for line in bed_file_lines:
