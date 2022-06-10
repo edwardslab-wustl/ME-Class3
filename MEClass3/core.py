@@ -1,5 +1,5 @@
 #
-# Authers: Manoj Kumar Singh (manoj@wustl.edu) and John R Edwards (jredwards@wustl.edu).
+# Authors: Manoj Kumar Singh (manoj@wustl.edu) and John R Edwards (jredwards@wustl.edu).
 #
 #---------------------------------------------------------------------------
 
@@ -636,7 +636,7 @@ def exec_interp(args):
         sys.stdout.write(sample_id+'\n')
         #
         if re.search(".gz$", sample_file):
-            with gzip.open(sample_file, 'r') as bed_file:
+            with gzip.open(sample_file, 'rt') as bed_file:
                 bed_file_lines = bed_file.readlines()
         else:
             with open(sample_file, 'r') as bed_file:
