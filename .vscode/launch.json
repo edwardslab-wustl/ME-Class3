@@ -1,0 +1,75 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Docker: Python - interp",
+            "type": "docker",
+            "request": "launch",
+            "preLaunchTask": "docker-run: debug",
+            "python": {
+              "pathMappings": [
+                {
+                  "localRoot": "${workspaceFolder}/example",
+                  "remoteRoot": "/app"
+                }
+              ],
+              "projectType": "general",
+              "program": "meclass3",
+              "console": "integratedTerminal",
+              "justMyCode": true,
+              "args": [
+                "interp",
+                "-nip", "500",
+                "-rfn", "example/test_region_fofn",
+                "-sfn", "example/test_sample_fofn_00",
+                "-tag", "chr11_gene_00"
+              ]
+            },
+        },
+        {
+            "name": "Python: interp",
+            "type": "python",
+            "request": "launch",
+            "program": "MEClass3/entry.py",
+            //"program": "meclass3",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "interp",
+                "-nip", "500",
+                "-rfn", "test_region_fofn",
+                "-sfn", "test_sample_fofn_00",
+                "-tag", "chr11_gene_00"
+            ]
+        },
+        {
+            "name": "Python: run_cluster",
+            "type": "python",
+            "request": "launch",
+             "program": "./lr_epi_simulator/cluster_and_assemble.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": [
+                "../data.3.txt", "../testing_output/test_out",
+                "-b", "700",
+                "-v", "1"
+            ] 
+       },
+       {
+        "name": "Python: add_error",
+        "type": "python",
+        "request": "launch",
+         "program": "./lr_epi_simulator/add_error.py",
+        "console": "integratedTerminal",
+        "justMyCode": true,
+        "args": [
+            "../data.3.txt", "../testing_output/data.3.error",
+            "-e", "0.2",
+            "-v", "1"
+        ] 
+   }
+    ]
+}

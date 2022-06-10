@@ -1,0 +1,36 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "docker-build",
+			"label": "docker-build",
+			"platform": "python",
+			"dockerBuild": {
+				"tag": "meclass3:latest",
+				"dockerfile": "${workspaceFolder}/Dockerfile",
+				"context": "${workspaceFolder}",
+				"pull": true
+			}
+		},
+		{
+			"type": "docker-run",
+			"label": "docker-run: debug",
+			"dependsOn": [
+				"docker-build"
+			],
+			"python": {
+				//"module": "meclass3",
+				"file": "/opt/ME-Class3/MEClass3/entry.py",
+				"args": [
+					"interp",
+					"-nip", "500",
+					"-rfn", "example/test_region_fofn",
+					"-sfn", "example/test_sample_fofn_00",
+					"-tag", "chr11_gene_00"
+				  ]
+				 
+				//"file": "meclass3"
+			}
+		}
+	]
+}
