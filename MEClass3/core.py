@@ -907,6 +907,11 @@ def exec_setup_expr(args):
         #
         if args.dexpr_flag == 2:
             df_expr[sample] = np.log2( df_expr[ sample.split('_')[1] ]/df_expr[ sample.split('_')[0] ] )
+            
+        if args.dexpr_flag == 3: # 
+            df_expr[sample] = np.where( df_expr[ sample.split('_')[0] ] > df_expr[ sample.split('_')[1] ], \
+                        -( df_expr[ sample.split('_')[0] ]/df_expr[ sample.split('_')[1] ] ), \
+                        ( df_expr[ sample.split('_')[1] ]/df_expr[ sample.split('_')[0] ] ) )
     #
     # processing of interf df
     #
@@ -939,6 +944,12 @@ def exec_setup_expr(args):
         df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0.0, 1, df_interp['expr_flag'] )
         df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0.0, -1, df_interp['expr_flag'] )
         df_interp['expr_flag'] = df_interp['expr_flag'].astype(int)
+        
+    if args.dexpr_flag == 3: # custom
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= args.expr_cutoff, 1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -args.expr_cutoff, -1, df_interp['expr_flag'] )
+        df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
+    #
     #
     # Finally write data for classifier
     df_interp.to_csv('interp_expr_data.csv', sep=',')
@@ -1536,6 +1547,7 @@ def main():
     sp_setup_expr.add_argument('-fef', action='store', dest='floor_expr', type=bool, default=True, help='Floor expression value?')
     sp_setup_expr.add_argument('-efv', action='store', dest='efv_inp', type=float, default=5.0, help='Expression floor value')
     sp_setup_expr.add_argument('-def', action='store', dest='dexpr_flag', type=int, default=1, help='Method for differential expression')
+    sp_setup_expr.add_argument('--expr_cutoff', action='store', dest='expr_cutoff', type=int, default=2, help='fold change in expression cutoff, must use -def 3')
 
     sp_run_clf = subparsers.add_parser('run_clf', help='Run classification argument')
     sp_run_clf.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from interpolation step')
