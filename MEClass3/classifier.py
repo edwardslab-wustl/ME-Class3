@@ -225,3 +225,15 @@ def exec_run_clf(args):
     #
     open(args.tag_inp+'_fi_out.txt', 'w').write(''.join(dfi_items))
  
+ 
+def exec_run_clf_help(parser):
+    parser.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from interpolation step')
+    parser.add_argument('-ntr', action='store', dest='ntr_inp', type=int, default=5001, help='Number of trees for Random Forest Classifier')
+    parser.add_argument('-npr', action='store', dest='npr_inp', type=int, default=8, help='Number of Processors for RF run')
+    parser.add_argument('-tag', action='store', dest='tag_inp', default='test', help='Tag for Output Writing')
+    parser.add_argument('-fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
+    parser.add_argument('-suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
+    parser.add_argument('-ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
+    parser.add_argument('-ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
+    #parser._action_groups.reverse()
+    return(parser)

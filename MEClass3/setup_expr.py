@@ -93,3 +93,13 @@ def exec_setup_expr(args):
     #
     # Finally write data for classifier
     df_interp.to_csv('interp_expr_data.csv', sep=',')
+
+def exec_setup_expr_help(parser):
+    parser.add_argument('-intrp', action='store', dest='intrp_inp', help='Interpolation CSV file')
+    parser.add_argument('-expr', action='store', dest='expr_inp', help='Expression file')
+    parser.add_argument('-fef', action='store', dest='floor_expr', type=bool, default=True, help='Floor expression value?')
+    parser.add_argument('-efv', action='store', dest='efv_inp', type=float, default=5.0, help='Expression floor value')
+    parser.add_argument('-def', action='store', dest='dexpr_flag', type=int, default=1, help='Method for differential expression')
+    parser.add_argument('--expr_cutoff', action='store', dest='expr_cutoff', type=int, default=2, help='fold change in expression cutoff, must use -def 3')
+    #parser._action_groups.reverse()
+    return(parser)

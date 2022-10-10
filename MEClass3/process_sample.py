@@ -52,3 +52,10 @@ def exec_proc_sample(args):
         df2_bed.drop(df2_bed.index, inplace=True)
         df1_bed.drop(df1_bed.index, inplace=True)
         del df1_bed, df2_bed, df_merged
+
+def exec_proc_sample_help(parser):
+    parser.add_argument('-ctp', action='store', dest='ctp_inp', help='Cell type Fofn')
+    parser.add_argument('-pto', action='store', dest='pto_inp', default='.', help='Path to Output')
+    parser.add_argument('-expr', action='store', dest='expr_inp', help='Name of expression file')
+    #parser._action_groups.reverse()
+    return(parser)

@@ -242,3 +242,21 @@ def exec_interp(args):
          open(args.tag_inp+'_gene_interp.csv', 'w').write(''.join(out_lines))
     for file_id, out_lines in dict_re_out.items():
         open(file_id+'_'+args.tag_inp+'_re_interp.csv', 'w').write(''.join(out_lines))
+        
+def exec_interp_help(parser):
+    parser.add_argument('-sigma', action='store', dest='sigma_inp', type=int, default=50, help='Value of sigma')
+    parser.add_argument('-nip', action='store', dest='nip_inp', type=int, default=500, help='Number of interp points')
+    parser.add_argument('-ibin', action='store', dest='ibin_inp', type=int, default=5000, help='Size of bin around TSS/GB')
+    parser.add_argument('-ach', action='store', dest='anch_win', type=int, default=100000, help='Anchor window')
+    parser.add_argument('-rfl', action='store', dest='refl_inp', type=int, default=500, help='RE flnk length')
+    parser.add_argument('-rff', action='store', dest='reff_inp', type=int, default=25, help='RE flnk features')
+    parser.add_argument('-rfn', action='store', dest='rfn_inp', help='Region fofn')
+    parser.add_argument('-tag', action='store', dest='tag_inp', help='Tag for output')
+    parser.add_argument('-sfn', action='store', dest='sfn_inp', help='Sample file name')
+    parser.add_argument('-fln', action='store_true', dest='flankNorm', default=False, help='Flank Normalized interpolation')
+    parser.add_argument('-gsl', action='store_true', dest='geneSelect', default=False, help='Interpolation  for slected genes?')
+    parser.add_argument('-frf', action='store_true', dest='fixedReFlnk', default=False, help='Fixed features for RE flank')
+    parser.add_argument('-mmg', action='store', dest='min_gene_meth', type=int, default=40, help='Minimum CpGs assayed')
+    parser.add_argument('-mmr', action='store', dest='min_re_meth', type=int, default=2, help='Minimum CpGs assayed')
+    #parser._action_groups.reverse()
+    return(parser)

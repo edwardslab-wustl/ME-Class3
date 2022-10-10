@@ -43,3 +43,12 @@ def exec_filter(args):
     df_expr = df_expr[(df_expr.index).isin(df_filter.index)] 
     df_expr.to_csv(output_expr_file_name, sep='\t', na_rep='NA', float_format='%.3f') #, header=None)
 
+def exec_filter_help(parser):
+    #parser_required = parser.add_argument_group('required arguments') #then use parer_required for required args
+    parser.add_argument('-expr', action='store', dest='expr_inp', help='Name of first file')
+    parser.add_argument('-annot', action='store', dest='annot_inp', help='Name of second file')
+    parser.add_argument('-oex', action='store', dest='out_expr_inp', help='Name of output expr file')
+    parser.add_argument('-oan', action='store', dest='out_annot_inp', help='Name of output annot file')
+    parser.add_argument('-apt', action='store', dest='annot_type', default='RefSeq', help='Gencode/RefSeq')
+    #parser._action_groups.reverse()
+    return(parser)

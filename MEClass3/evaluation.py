@@ -104,3 +104,9 @@ def exec_eval(args):
                 output_75per.write( str(0) +'\t'+ sample +'\n' )
 
     sys.stdout.write( '#Total_Genes:\t'+str( totalGenes )+'\n' )
+
+def exec_eval_help(parser):
+    parser.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from classification')
+    parser.add_argument('-nstp', action='store', dest='steps_inp', type=int, default=101, help='Number of steps')
+    #parser._action_groups.reverse()
+    return(parser)
