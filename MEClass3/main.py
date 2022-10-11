@@ -17,7 +17,8 @@ from MEClass3.classifier import exec_run_clf, exec_run_clf_help
 from MEClass3.evaluation import exec_eval, exec_eval_help
 
 def main():
-    parser = argparse.ArgumentParser()
+    meclass3_description = '''Tool for integrative analysis of methylation and expression data'''
+    parser = argparse.ArgumentParser(description=meclass3_description)
     subcommands = setup_subcommands()
     parser = setup_subparsers(parser, subcommands)
     args = parser.parse_args()
