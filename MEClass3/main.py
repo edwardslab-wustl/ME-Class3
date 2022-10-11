@@ -24,57 +24,57 @@ def main():
     args.func(args)
     
 def setup_subcommands():       
-    help_data = []
+    subcommands = []
     
-    help_data.append( HelpItem( name="filter", 
+    subcommands.append( HelpItem( name="filter", 
                                 function=exec_filter,
                                 help_function=exec_filter_help,
                                 help = "Filters data",
                                 desc = "Filter description"))
 
-    help_data.append( HelpItem( name="proc_sample", 
+    subcommands.append( HelpItem( name="proc_sample", 
                                 function=exec_proc_sample,
                                 help_function=exec_proc_sample_help,
                                 help = "process sample",
                                 desc = "process sample description"))
     
-    help_data.append( HelpItem( name="proximity_list", 
+    subcommands.append( HelpItem( name="proximity_list", 
                                 function=exec_proximity_list,
                                 help_function=exec_proximity_list_help,
                                 help = "Proximity list",
                                 desc = "proximity list description"))
 
-    help_data.append( HelpItem( name="merge_features", 
+    subcommands.append( HelpItem( name="merge_features", 
                                 function=exec_merge_features,
                                 help_function=exec_merge_features_help,
                                 help = "Merge features",
                                 desc = "Merge features description"))
 
-    help_data.append( HelpItem( name="setup_expr", 
+    subcommands.append( HelpItem( name="setup_expr", 
                                 function=exec_setup_expr,
                                 help_function=exec_setup_expr_help,
                                 help = "setup expr",
                                 desc = "setup expr description"))
 
-    help_data.append( HelpItem( name="run_clf", 
+    subcommands.append( HelpItem( name="run_clf", 
                                 function=exec_run_clf,
                                 help_function=exec_run_clf_help,
                                 help = "run classifier",
                                 desc = "run classifier description"))
 
-    help_data.append( HelpItem( name="eval", 
+    subcommands.append( HelpItem( name="eval", 
                                 function=exec_eval,
                                 help_function=exec_eval_help,
                                 help = "Evaluation",
                                 desc = "Evaluation description"))
 
-    help_data.append( HelpItem( name="proc_reg", 
+    subcommands.append( HelpItem( name="proc_reg", 
                                 function=exec_proc_reg,
                                 help_function=exec_proc_reg_help,
                                 help = "Process region",
                                 desc = "Process region description"))
 
-    return help_data
+    return subcommands
 
 if __name__ == '__main__':
     main()
