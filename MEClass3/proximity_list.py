@@ -127,11 +127,12 @@ def exec_proximity_list(args):
         dict_flnm['n_end_'+str(i)].close()
         
 def exec_proximity_list_help(parser):
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-glf', action='store', dest='glf_inp', required=True, help='gene list file')
     parser.add_argument('-pst', action='store', dest='pst_inp', type=int, default=1, help='pend start index')
     parser.add_argument('-ped', action='store', dest='ped_inp', type=int, default=2, help='pend end index')
     parser.add_argument('-nst', action='store', dest='nst_inp', type=int, default=1, help='nend start index')
     parser.add_argument('-ned', action='store', dest='ned_inp', type=int, default=2, help='nend end index')
     parser.add_argument('-twn', action='store', dest='twin_inp', type=int, default=5000, help='nend end index')
-    parser.add_argument('-glf', action='store', dest='glf_inp', help='gene list file')
-    #parser._action_groups.reverse()
+    parser._action_groups.reverse()
     return(parser)

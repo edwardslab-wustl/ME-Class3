@@ -227,7 +227,8 @@ def exec_run_clf(args):
  
  
 def exec_run_clf_help(parser):
-    parser.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from interpolation step')
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-dfi', action='store', dest='dfi_inp', required=True, help='Dataframe output from interpolation step')
     parser.add_argument('-ntr', action='store', dest='ntr_inp', type=int, default=5001, help='Number of trees for Random Forest Classifier')
     parser.add_argument('-npr', action='store', dest='npr_inp', type=int, default=8, help='Number of Processors for RF run')
     parser.add_argument('-tag', action='store', dest='tag_inp', default='test', help='Tag for Output Writing')

@@ -45,8 +45,8 @@ def exec_filter(args):
 
 def exec_filter_help(parser):
     parser_required = parser.add_argument_group('required arguments') #then use parer_required for required args
-    parser_required.add_argument('-expr', action='store', dest='expr_inp', help='Name of first file')
-    parser_required.add_argument('-annot', action='store', dest='annot_inp', help='Name of second file')
+    parser_required.add_argument('-expr', action='store', dest='expr_inp', required=True, help='Name of first file')
+    parser_required.add_argument('-annot', action='store', dest='annot_inp', required=True, help='Name of second file')
     parser.add_argument('-oex', action='store', dest='out_expr_inp', default="meclass_output.expr", help='Name of output expr file')
     parser.add_argument('-oan', action='store', dest='out_annot_inp', default="meclass_output.anno", help='Name of output annot file')
     parser.add_argument('-apt', action='store', dest='annot_type', default='RefSeq', help='Gencode/RefSeq')

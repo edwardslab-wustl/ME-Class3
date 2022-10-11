@@ -153,9 +153,10 @@ def exec_proc_reg(args):
         df_chrom_cons[chrom].to_csv(path_to_output+'/enhc_bed/'+chrom+'_all_cell_type_noTSS_cons.bed', sep='\t', index=False, header=None)
 
 def exec_proc_reg_help(parser):
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-glf', action='store', dest='glf_inp', required=True, help='Gene information file')
     parser.add_argument('-gpj', action='store', dest='gapj_inp', type=int, default=500, help='RE closer than this will be joined together.')
     parser.add_argument('-msz', action='store', dest='max_inp', type=int, default=1000, help='Maximum size of RE to take into account.')
     parser.add_argument('-twn', action='store', dest='twin_inp', type=int, default=2000, help='RE falling +/- is this region around TSS will be ignored.')
-    parser.add_argument('-glf', action='store', dest='glf_inp', help='Gene information file')
-    #parser._action_groups.reverse()
+    parser._action_groups.reverse()
     return(parser)

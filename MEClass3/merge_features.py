@@ -49,10 +49,11 @@ def exec_merge_features(args):
     df_merged.to_csv('interp_merged.csv', sep=',')
 
 def exec_merge_features_help(parser):
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-tif', action='store', dest='tif_inp', required=True, help='tss interpolation file')
     parser.add_argument('-pst', action='store', dest='pst_inp', type=int, default=1, help='pend start index')
     parser.add_argument('-ped', action='store', dest='ped_inp', type=int, default=2, help='pend end index')
     parser.add_argument('-nst', action='store', dest='nst_inp', type=int, default=1, help='nend start index')
     parser.add_argument('-ned', action='store', dest='ned_inp', type=int, default=2, help='nend end index')
-    parser.add_argument('-tif', action='store', dest='tif_inp', help='tss interpolation file')
-    #parser._action_groups.reverse()
+    parser._action_groups.reverse()
     return(parser)

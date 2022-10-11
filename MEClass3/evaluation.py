@@ -106,7 +106,8 @@ def exec_eval(args):
     sys.stdout.write( '#Total_Genes:\t'+str( totalGenes )+'\n' )
 
 def exec_eval_help(parser):
-    parser.add_argument('-dfi', action='store', dest='dfi_inp', help='Dataframe output from classification')
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-dfi', action='store', dest='dfi_inp', required=True, help='Dataframe output from classification')
     parser.add_argument('-nstp', action='store', dest='steps_inp', type=int, default=101, help='Number of steps')
-    #parser._action_groups.reverse()
+    parser._action_groups.reverse()
     return(parser)

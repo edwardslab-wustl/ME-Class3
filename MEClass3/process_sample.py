@@ -54,8 +54,9 @@ def exec_proc_sample(args):
         del df1_bed, df2_bed, df_merged
 
 def exec_proc_sample_help(parser):
-    parser.add_argument('-ctp', action='store', dest='ctp_inp', help='Cell type Fofn')
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-ctp', action='store', dest='ctp_inp', required=True, help='Cell type Fofn')
+    parser_required.add_argument('-expr', action='store', dest='expr_inp', required=True, help='Name of expression file')
     parser.add_argument('-pto', action='store', dest='pto_inp', default='.', help='Path to Output')
-    parser.add_argument('-expr', action='store', dest='expr_inp', help='Name of expression file')
-    #parser._action_groups.reverse()
+    parser._action_groups.reverse()
     return(parser)
