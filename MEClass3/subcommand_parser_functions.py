@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
-class HelpItem:
+class Subcommand:
     """Class for storing functions and associated help"""
     name: str
     function: str
