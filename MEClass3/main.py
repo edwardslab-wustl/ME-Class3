@@ -33,6 +33,12 @@ def setup_subcommands():
                                 help = "Filters data",
                                 desc = "Filter description"))
 
+    subcommands.append( Subcommand( name="interp", 
+                                function=exec_interp,
+                                help_function=exec_interp_help,
+                                help = "interp data",
+                                desc = "interp description"))
+
     subcommands.append( Subcommand( name="proc_sample", 
                                 function=exec_proc_sample,
                                 help_function=exec_proc_sample_help,
