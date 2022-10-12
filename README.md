@@ -2,10 +2,11 @@
 
 ## Requirements
  * Python Packages
-     *  Numpy
-     *  Pandas
-     *  Scipy
-     *  Sklearn
+     *  numpy
+     *  pandas
+     *  scipy
+     *  scikit-learn
+	 *  matplotlib
 
 ## Installation
 Clone and install with pip:
