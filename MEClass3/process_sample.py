@@ -1,6 +1,65 @@
+import os
 import pandas as pd
+from dataclasses import dataclass
+
+@dataclass(frozen=True)
+class SamplePair:
+    name: str
+    tag1: str
+    file1: str
+    tag2: str
+    file2: str
+
+def read_sample_pair (file, num):
+    num = str(num)
+    df_bed = pd.read_table(file, index_col=False,
+        na_values = 'NA', names = ['chrom'+num, 'start'+num, 'end'+num, 'value'+num])
+    df_bed['idx_value'+num] = df_bed['chrom'+num]+'_'+df_bed['start'+num].astype(str)
+    df_bed = df_bed.set_index('idx_value'+num)
+    return(df_bed)
+
+def mk_output_dir(dir):
+    if not os.path.exists(dir):
+        os.mkdir(dir)
 
 def exec_proc_sample(args):
+    input_list_file = args.input_list
+    output_path = args.output_path
+    #expr_file = args.expr_input
+    
+    mk_output_dir(output_path)
+    
+    with open(args.logfile, 'w') as log_FH:
+        
+        #df_expr = pd.read_table(expr_file).set_index('gene_id')
+        #expr_cell_ids = list(df_expr.columns.values)
+    
+        pair_list = []
+    
+        with open(input_list_file, 'r') as input_list_FH:
+            for line in input_list_FH:
+                (tag1, file1, tag2, file2) = line.strip().split()
+                name = "_".join((tag1, tag2))
+                pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
+    
+        for sample_pair in pair_list:
+            log_FH.write("processing " + sample_pair.name + "\n")
+            
+            df1_bed = read_sample_pair(sample_pair.file1, 1)
+            df2_bed = read_sample_pair(sample_pair.file2, 2)
+
+            df_merged = df_merged = pd.concat( [ df1_bed, df2_bed ], axis=1, join='inner')
+            df_merged['dcm'] = (df_merged['value2'] - df_merged['value1']).round(args.sig_digits)
+
+            output_file = sample_pair.name +'.bedgraph'
+            cols_to_keep = ['chrom1', 'start1', 'end1', 'dcm']
+            df_merged[cols_to_keep].to_csv(output_path+'/'+output_file, sep='\t', na_rep='NA', header=None, index=False)
+        
+            df1_bed.drop(df1_bed.index, inplace=True)
+            df2_bed.drop(df2_bed.index, inplace=True)
+            del df1_bed, df2_bed, df_merged
+        
+def exec_proc_sample_wheel(args):
     
     ctp_fofn = args.ctp_inp
     path_to_output = args.pto_inp
@@ -54,6 +113,21 @@ def exec_proc_sample(args):
         del df1_bed, df2_bed, df_merged
 
 def exec_proc_sample_help(parser):
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-i', '--input_list', action='store',
+        dest='input_list', required=True, help='Input list of sample names and file locations for pairings.')
+    #parser_required.add_argument('-e', '--expr', action='store',
+    #    dest='expr_input', required=True, help='Name of expression file')
+    parser.add_argument('-o', '--output_path', action='store', dest='output_path',
+        default='intermediate_files', help='Path to Output')
+    parser.add_argument('--logfile', action='store', dest='logfile',
+        default='proc_sample.log', help='log file')
+    parser.add_argument('--sig_digits', action='store',
+        default=3, help='Significant digits for methylation difference')
+    parser._action_groups.reverse()
+    return(parser)
+
+def exec_proc_sample_wheel_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-ctp', action='store', dest='ctp_inp', required=True, help='Cell type Fofn')
     parser_required.add_argument('-expr', action='store', dest='expr_inp', required=True, help='Name of expression file')
