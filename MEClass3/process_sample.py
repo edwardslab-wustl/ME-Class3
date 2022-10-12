@@ -25,36 +25,26 @@ def mk_output_dir(dir):
 def exec_proc_sample(args):
     input_list_file = args.input_list
     output_path = args.output_path
-    #expr_file = args.expr_input
     
     mk_output_dir(output_path)
     
-    with open(args.logfile, 'w') as log_FH:
-        
-        #df_expr = pd.read_table(expr_file).set_index('gene_id')
-        #expr_cell_ids = list(df_expr.columns.values)
-    
+    with open(args.logfile, 'w', 0) as log_FH:
         pair_list = []
-    
         with open(input_list_file, 'r') as input_list_FH:
             for line in input_list_FH:
-                (tag1, file1, tag2, file2) = line.strip().split()
-                name = "_".join((tag1, tag2))
-                pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
-    
+                if not line.startswith('#'):
+                    (tag1, file1, tag2, file2) = line.strip().split()
+                    name = "_".join((tag1, tag2))
+                    pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
         for sample_pair in pair_list:
             log_FH.write("processing " + sample_pair.name + "\n")
-            
             df1_bed = read_sample_pair(sample_pair.file1, 1)
             df2_bed = read_sample_pair(sample_pair.file2, 2)
-
             df_merged = df_merged = pd.concat( [ df1_bed, df2_bed ], axis=1, join='inner')
             df_merged['dcm'] = (df_merged['value2'] - df_merged['value1']).round(args.sig_digits)
-
             output_file = sample_pair.name +'.bedgraph'
             cols_to_keep = ['chrom1', 'start1', 'end1', 'dcm']
             df_merged[cols_to_keep].to_csv(output_path+'/'+output_file, sep='\t', na_rep='NA', header=None, index=False)
-        
             df1_bed.drop(df1_bed.index, inplace=True)
             df2_bed.drop(df2_bed.index, inplace=True)
             del df1_bed, df2_bed, df_merged
