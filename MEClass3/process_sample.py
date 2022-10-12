@@ -1,34 +1,15 @@
-import os
 import pandas as pd
-from dataclasses import dataclass
 
-@dataclass(frozen=True)
-class SamplePair:
-    name: str
-    tag1: str
-    file1: str
-    tag2: str
-    file2: str
-
-def read_sample_pair (file, num):
-    num = str(num)
-    df_bed = pd.read_table(file, index_col=False,
-        na_values = 'NA', names = ['chrom'+num, 'start'+num, 'end'+num, 'value'+num])
-    df_bed['idx_value'+num] = df_bed['chrom'+num]+'_'+df_bed['start'+num].astype(str)
-    df_bed = df_bed.set_index('idx_value'+num)
-    return(df_bed)
-
-def mk_output_dir(dir):
-    if not os.path.exists(dir):
-        os.mkdir(dir)
+from io_functions import mk_output_dir
+from io_functions import print_to_log
+from sample import SamplePair
+from sample import read_sample_pair
 
 def exec_proc_sample(args):
     input_list_file = args.input_list
     output_path = args.output_path
-    
     mk_output_dir(output_path)
-    
-    with open(args.logfile, 'w', 0) as log_FH:
+    with open(args.logfile, 'w') as log_FH:
         pair_list = []
         with open(input_list_file, 'r') as input_list_FH:
             for line in input_list_FH:
@@ -37,7 +18,7 @@ def exec_proc_sample(args):
                     name = "_".join((tag1, tag2))
                     pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
         for sample_pair in pair_list:
-            log_FH.write("processing " + sample_pair.name + "\n")
+            print_to_log(log_FH, "processing " + sample_pair.name + "\n")
             df1_bed = read_sample_pair(sample_pair.file1, 1)
             df2_bed = read_sample_pair(sample_pair.file2, 2)
             df_merged = df_merged = pd.concat( [ df1_bed, df2_bed ], axis=1, join='inner')
