@@ -15,7 +15,7 @@ def exec_interp(args):
     # Readin region file info
     with open(reg_fofn,'r') as reg_fofn_file:
         reg_fofn_lines = reg_fofn_file.readlines()
-    reg_fofn_file.close()
+#    reg_fofn_file.close()
     dict_gene, dict_gene_out = {}, {}
     dict_re, dict_re_out = {}, {}
     for item in reg_fofn_lines:
@@ -25,7 +25,7 @@ def exec_interp(args):
         file_id = (item.strip().split()[1]).strip('.gene')
         with open(file_name,'r') as reg_file:
             file_lines_prefltrd = reg_file.readlines()
-        reg_file.close()
+#        reg_file.close()
         # Filter Genes
         # 1. Ambiguous or incomplete TSS annotation
         # 2. Genes shorter than 5 kb.
@@ -71,7 +71,7 @@ def exec_interp(args):
     # Sample Information.
     with open(sample_fofn,'r') as sample_fofn_file:
         sample_fofn_lines = sample_fofn_file.readlines()
-    sample_fofn_file.close()
+#    sample_fofn_file.close()
     dict_sample = {}
     if args.geneSelect: #gene_select: # for gene selection 
         sys.stdout.write('Gene Selection has been chosen. A third column in sample_fofn must have gene_ids')
