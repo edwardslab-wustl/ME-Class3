@@ -16,7 +16,7 @@ def generate_out_header(num_pts, anno_type):
     if anno_type == 'gene_tss':
         for pos in range(num_pts):
             header = header + (',ftss_'+str(pos))
-    elif anno_type == 're':
+    elif anno_type == 'enh':
         for pos in range(num_pts):
             #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
             header = header + (',fre_'+str(pos)) 
@@ -68,9 +68,10 @@ def exec_interp(args):
                 out_data = out_header + out_data
                 out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
             elif anno_type == 'enh':
-                out_data = out_header
+                anno_list_postfilter = anno_list_prefilter
                 out_data = interp_regions(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
-                out_file = args.output_path + "/" + sample_pair.name + '_re_interp.csv'
+                out_data = out_header + out_data
+                out_file = args.output_path + "/" + sample_pair.name + '_enh_interp.csv'
             else:
                 eprint("Can't recognize anno_type. Check --anno_type specification in help.")
                 exit()
@@ -128,36 +129,28 @@ def interp_genes(gene_list, dict_bed, sample_id, log_FH, args):
     return out_data
 
 def interp_regions(region_list, dict_bed, sample_id, log_FH, args):
+    out_data=''
     reg_type = 're'
     interp_bin = 500 # for model gene plots
     # Regulatory Elements
     for region in region_list: # regulatory elements
         cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
-        #for reg_info in file_lines:
-        #    reg_items = reg_info.strip().split()
-        #    gene_id, chrom, strand, reg_start, reg_end = \
-        #            reg_items[0], reg_items[1], reg_items[2], int(reg_items[5]), int(reg_items[6])
         print_to_log(log_FH, region.id+'\n')
-                            # ----------------------------------------------------------------------------
-                            # Methylation based gene filters
-                            # 3. Genes with <2 CpGs assayed within +/-5kb of the TSS
-                            #
+        # ----------------------------------------------------------------------------
+        # Methylation based filters
+        # 3. Genes with <2 CpGs assayed within enhancer
+        #
         for cpos in range( (region.start-interp_bin), (region.end+interp_bin)+1 ):
             if region.chr in dict_bed and cpos in dict_bed[region.chr]:
                 dmet_tmp.append(dict_bed[region.chr][cpos])
                 cpos_tmp.append(cpos)
-        if len(dmet_tmp) < args.min_re_cpgs:
-            print_to_log(log_FH,region.id + ' has < ' +  str(args.min_re_cpgs) \
+        if len(dmet_tmp) < args.min_reg_cpgs:
+            print_to_log(log_FH,region.id + ' has < ' +  str(args.min_reg_cpgs) \
                         + ' CpGs assayed in ' + sample_id + '\n')
             continue
-                               #
-#       if max(dmet_tmp) < 0.2
-#           sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
-#           continue
         #-----------------------------------------------------------------------------
         if not args.flankNorm:
             anchor_window = 0
-#        if args.flankNorm:
         for cpos in range( region.start-(interp_bin+anchor_window), region.end+(interp_bin+anchor_window)+1 ):
             if region.chr in dict_bed and cpos in dict_bed[region.chr]:
                 dmet_dat.append(dict_bed[region.chr][cpos])
@@ -168,7 +161,6 @@ def interp_regions(region_list, dict_bed, sample_id, log_FH, args):
             ( cpos_dat[-1] not in range( region.end+interp_bin+1, region.end+(interp_bin+anchor_window)+1 ) )):
             print_to_log(log_FH,region.id + ' has no CpGs in anchor windows in ' + sample_id + '\n')
             continue
-
         # Gather interpolated data
         interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, region.start, region.end, region.strand, reg_type, args).dat_proc()
         # cross-check number of interpolated features
@@ -176,21 +168,19 @@ def interp_regions(region_list, dict_bed, sample_id, log_FH, args):
             print_to_log(log_FH,str(len(interpolated_dmet_data)))
             print_to_log(log_FH,'Inconsistent number of interpolation features!')
             exit()
-        # Write data
-        #if len(interpolated_dmet_data) > 0:
-        #dict_re_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
-        #dict_re_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
+        # Write data 
         out_data = out_data + '\n'+region.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
         del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
     return out_data                  
         
 def exec_interp_help(parser):
     parser_required = parser.add_argument_group('required arguments')
-    #parser_required.add_argument('-rfn', action='store', dest='rfn_inp', required=True, help='Region fofn')
     parser_required.add_argument('-a','--anno_file', required=True, help='region or gene annotation file')
     parser_required.add_argument('-t', dest='tag_inp', required=True, help='Tag for output')
     parser_required.add_argument('-i', '--input_list', required=True, help='List of sample pairs')
-    parser_required.add_argument('--anno_type', default="gene_tss", help='region or gene annotation file')
+    parser_required.add_argument('--anno_type', default="gene_tss", 
+                                 choices=["gene_tss", "enh"],
+                                 help='region or gene annotation file')
     parser.add_argument('--sigma', type=int, default=50, help='Value of sigma for Gaussian smoothing')
     parser.add_argument('--num_interp_points', type=int, default=500, help='Number of interp points')
     parser.add_argument('-ibin', dest='ibin_inp', type=int, default=5000, help='Size of bin around TSS/GB')

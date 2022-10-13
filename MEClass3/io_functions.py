@@ -22,6 +22,8 @@ def print_to_log(FH, *args, **kwargs):
 def read_anno_file(anno_file, anno_type):
     if anno_type == 'gene_tss':
         feature_list = read_gene_file(anno_file)
+    elif anno_type == 'enh':
+        feature_list = read_region_file(anno_file)
     else:
         eprint("Can't recognize anno_type. Check --anno_type specification in help.")
         exit()
@@ -75,7 +77,7 @@ class RegionAnno:
     def mid_point(self) -> int:
         return round(float(self.end - self.start) / 2)
  
-def read_region_anno(file):
+def read_region_file(file):
     region_list = []
     with open(file, 'r') as FH:
         for line in FH:
@@ -83,8 +85,8 @@ def read_region_anno(file):
                 items = line.strip().split()
                 id = items[0] + '-' + items[1]
                 region = RegionAnno( id, items[0], items[1], items[2],
-                                    int(items[6]), int(items[7]), 
-                                    int(items[4]), int(items[5]), items[3] )
+                                    int(items[6]), int(items[7]), items[3],
+                                    int(items[4]), int(items[5]) )
                 region_list.append(region)
     return region_list
 
