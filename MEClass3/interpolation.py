@@ -1,263 +1,212 @@
-import gzip
 import sys
 import re
 import resource
 import gzip
 
 from MEClass3.Interpolation_class import Interpolation
+from MEClass3.io_functions import print_to_log
+from MEClass3.io_functions import read_anno_file 
+from MEClass3.io_functions import eprint 
+from MEClass3.io_functions import read_bed_file
+from MEClass3.sample import read_sample_file
+
+
+def generate_out_header(num_pts, anno_type):
+    header = 'gene_id-sample_name'
+    if anno_type == 'gene_tss':
+        for pos in range(num_pts):
+            header = header + (',ftss_'+str(pos))
+    elif anno_type == 're':
+        for pos in range(num_pts):
+            #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
+            header = header + (',fre_'+str(pos)) 
+    else:
+        eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+        exit()
+    return header
 
 def exec_interp(args):
-    num_intrp_point = args.nip_inp
-    reg_fofn = args.rfn_inp
-    sample_fofn = args.sfn_inp
-    interp_bin = args.ibin_inp
+    #num_interp_points = args.num_interp_points
+    anno_file = args.anno_file
+    anno_type = args.anno_type
+    #reg_fofn = args.rfn_inp
+    pair_list = read_sample_file(args.input_list)
+    out_header = generate_out_header(args.num_interp_points, anno_type)
+    
     anchor_window = args.anch_win
-    # Readin region file info
-    with open(reg_fofn,'r') as reg_fofn_file:
-        reg_fofn_lines = reg_fofn_file.readlines()
-#    reg_fofn_file.close()
-    dict_gene, dict_gene_out = {}, {}
-    dict_re, dict_re_out = {}, {}
-    for item in reg_fofn_lines:
-        if item.startswith('#'):
-            continue
-        file_name = (item.strip().split()[1])
-        file_id = (item.strip().split()[1]).strip('.gene')
-        with open(file_name,'r') as reg_file:
-            file_lines_prefltrd = reg_file.readlines()
-#        reg_file.close()
-        # Filter Genes
-        # 1. Ambiguous or incomplete TSS annotation
-        # 2. Genes shorter than 5 kb.
+    with open(args.logfile, 'w') as log_FH:
+        anno_list_prefilter = read_anno_file(anno_file, anno_type)
+        anno_list_postfilter =[]
+        dict_sample = {}
+        for sample_pair in pair_list:
+            sample_id = sample_pair.name 
+            sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
+            print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
+            dict_bed = {}
+            bed_file_lines = read_bed_file(sample_file)
+            chr_track = 'chr00'
+            for line in bed_file_lines:
+                if line.split()[0] != chr_track:
+                    chr_track = line.split()[0]
+                    dict_bed[chr_track] = {}
+                    dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
+                    continue
+                dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
+            del bed_file_lines[:]
+            # memory use
+            print_to_log(log_FH, 'Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
+            if anno_type == 'gene_tss':
+                for gene in anno_list_prefilter:
+                    keep_flag = True
+                    if gene.gene_length() < args.min_gene_length:
+                        keep_flag = False
+                    elif args.filter_cdsStats and ( (gene.cdsStartStat != 'cmpl') or (gene.cdsEndStat != 'cmpl') ):
+                        keep_flag = False
+                    if keep_flag:
+                        anno_list_postfilter.append(gene)
+                out_data = interp_genes(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                out_data = out_header + out_data
+                out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
+            elif anno_type == 'enh':
+                out_data = out_header
+                out_data = interp_regions(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                out_file = args.output_path + "/" + sample_pair.name + '_re_interp.csv'
+            else:
+                eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+                exit()
+            with open(out_file, 'w') as out_FH:
+                out_FH.write(out_data)
+            dict_bed.clear()
+            del dict_bed
+            
+def interp_genes(gene_list, dict_bed, sample_id, log_FH, args):
+    out_data = ''
+    interp_bin = args.ibin_inp
+    reg_type='gene'
+    for gene in gene_list:
+        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+        tss = gene.tss()
+        tes = gene.tes()
+        print_to_log(log_FH, gene.id + "\n")
+        # ----------------------------------------------------------------------------
+        # Methylation based gene filters
         # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
         # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
-        # 5. Alternative Promoters 
-        # 6. cdsStartStat == cmpl; cdsEndStat == cmpl;
-        # 7. differentially expressed genes >=2-Fold difference after floor of five.  
-        if item.strip().split()[0] == 'gene':
-            file_lines = []
-            for line in file_lines_prefltrd:
-                if line.startswith('#'): # header
-                    continue
-                lines_items = line.strip().split()
-                txStart = int( lines_items[4] )
-                txEnd = int( lines_items[5] )
-                cdsStart = int( lines_items[6] )
-                cdsEnd = int( lines_items[7] )
-                exonCount = int( lines_items[8] )
-                cdsStartStat = lines_items[13]
-                cdsEndStat = lines_items[14]
-                gene_length = txEnd - txStart 
-                if gene_length < 5000: #Genes shorter than 5 kb.
-                    continue
-                if (cdsStartStat != 'cmpl') or (cdsEndStat != 'cmpl'):
-                    continue
-                file_lines.append(line)
-            open(file_id+'_'+args.tag_inp+'_fltrd.gene', 'w').write(''.join(file_lines))
-        if item.strip().split()[0] == 'gene':
-            dict_gene[file_id] = file_lines
-#            dict_gene[file_id] = file_lines_prefltrd
-            dict_gene_out[file_id] = []
-            dict_gene_out[file_id].append('gene_id-sample_name') # write header
-            for pos in range(num_intrp_point):
-                dict_gene_out[file_id].append(',ftss_'+str(pos))
-        if item.strip().split()[0] == 're':
-            dict_re[file_id] = file_lines_prefltrd
-            dict_re_out[file_id] = []
-            dict_re_out[file_id].append('gene_id-sample_name') # write header
-            for pos in range(num_intrp_point):
-                dict_re_out[file_id].append(',f'+''.join(file_id.split('_'))+'_'+str(pos))    
-#        del file_name, file_id, file_lines, file_lines_prefltrd
-    # Sample Information.
-    with open(sample_fofn,'r') as sample_fofn_file:
-        sample_fofn_lines = sample_fofn_file.readlines()
-#    sample_fofn_file.close()
-    dict_sample = {}
-    if args.geneSelect: #gene_select: # for gene selection 
-        sys.stdout.write('Gene Selection has been chosen. A third column in sample_fofn must have gene_ids')
-        dict_sample_gene_list = {} 
-    for item in sample_fofn_lines:
-        if item.startswith('#'):
+        for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
+            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+                dmet_tmp.append(dict_bed[gene.chr][cpos])
+                cpos_tmp.append(cpos)
+        if len(dmet_tmp) < args.min_gene_cpgs:
+            print_to_log(log_FH, gene.id + ' has < ' +  str(args.min_gene_cpgs)  + ' CpGs assayed in ' + sample_id + '\n')
             continue
-        dict_sample[item.strip().split()[0]] = item.strip().split()[1]
-        if args.geneSelect: #gene_select:
-            dict_sample_gene_list[item.strip().split()[0]] = item.strip().split()[2] #
-    for sample_id, sample_file in dict_sample.items():
-        if args.geneSelect: #gene_select: #
-            with open(dict_sample_gene_list[sample_id], 'r') as gene_list_file:
-                gene_list_lines = gene_list_file.readlines()
-            gene_list_file.close()
-            gene_id_list = []
-            for item in gene_list_lines:
-                gid = item.strip().split()[0]
-                if gid.startswith('#'):
-                    continue
-                gene_id_list.append(gid)
-            gene_id_list = set(gene_id_list)
-        dict_bed = {}
-        sys.stdout.write(sample_id+'\n')
-        if re.search(".gz$", sample_file):
-            with gzip.open(sample_file, 'rt') as bed_file:
-                bed_file_lines = bed_file.readlines()
-        else:
-            with open(sample_file, 'r') as bed_file:
-                bed_file_lines = bed_file.readlines()
-        chr_track = 'chr00'
-        for line in bed_file_lines:
-            if line.split()[0] != chr_track:
-                chr_track = line.split()[0]
-                dict_bed[chr_track] = {}
-                dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
-                continue
-            dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
-        del bed_file_lines[:]
-        # memory use
-        sys.stdout.write('Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
-        for file_id, file_lines in dict_gene.items(): # gene
-            reg_type = 'gene'
-            for reg_info in file_lines:
-                reg_items = reg_info.strip().split()
-                cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
-                if reg_items[1].startswith('N'):
-                    gene_id, chrom, strand, tx_start, tx_end = \
-                        reg_items[1], reg_items[2], reg_items[3], int(reg_items[4]), int(reg_items[5])
-                    tss = tx_start if strand == '+' else tx_end
-                    tes = tx_end if strand == '+' else tx_start
-                if reg_items[0].startswith('ENSG'): # Ensembl
-                    gene_id, chrom, tx_start, tx_end = \
-                        reg_items[0], reg_items[1], int(reg_items[2]), int(reg_items[3])
-                    strand = '-' if reg_items[4] == '-1' else '+'
-                    tss = tx_start if strand == '+' else tx_end
-                    tes = tx_end if strand == '+' else tx_start 
-                if args.geneSelect and ( gene_id not in gene_id_list ): # gene selection
-                    continue
-                sys.stdout.write(gene_id+'\n')
-                # ----------------------------------------------------------------------------
-                # Methylation based gene filters
-                # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
-                # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
-                for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
-                    try:
-                        dmet_tmp.append(dict_bed[chrom][cpos])
-                        cpos_tmp.append(cpos)
-                    except KeyError:
-                        continue
-                if len(dmet_tmp) < args.min_gene_meth:
-                    sys.stderr.write(gene_id + ' has < ' +  str(args.min_gene_meth)  + ' CpGs assayed in ' + sample_id + '\n')
-                    continue
-                if max(dmet_tmp) < 0.2:
-                    sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
-                    continue
-                #-----------------------------------------------------------------------------    
-                if not args.flankNorm: # Endpoint correction will be used in this case
-                    anchor_window = 0
-#                if args.flankNorm:
-                for cpos in range( tx_start-(interp_bin+anchor_window), tx_end+(interp_bin+anchor_window)+1 ):
-                    try:
-                        dmet_dat.append(dict_bed[chrom][cpos])
-                        cpos_dat.append(cpos)
-                    except KeyError:
-                        continue
-                # Missing anchor            
-                if args.flankNorm and \
-                    (( cpos_dat[0] not in range( tx_start-(interp_bin+anchor_window), tx_start-interp_bin ) ) or \
-                    ( cpos_dat[-1] not in range( tx_end+interp_bin+1, tx_end+(interp_bin+anchor_window)+1 ) )):
-                    sys.stderr.write(gene_id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
-                    continue 
-                # Gather interpolated data
-                interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, tx_start, tx_end, strand, reg_type, args).dat_proc()
-                
-                # cross-check number of interpolated features
-                if len(interpolated_dmet_data) != num_intrp_point:
-                    sys.stdout.write('Inconsistent number of interpolation features!')
-                    sys.exit() # Exit if number is inconsistent 
-                # Write data
-#                if len(interpolated_dmet_data) > 0:
-                dict_gene_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
-                dict_gene_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
-                del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
-        # Regulatory Elements
-        for file_id, file_lines in dict_re.items(): # regulatory elements
-            reg_type = 're'
-            interp_bin = 500 # for model gene plots
-            for reg_info in file_lines:
-                reg_items = reg_info.strip().split()
-                cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
-                gene_id, chrom, strand, reg_start, reg_end = \
-                        reg_items[0], reg_items[1], reg_items[2], int(reg_items[5]), int(reg_items[6])
-                sys.stdout.write(gene_id+'\n')
-                                # ----------------------------------------------------------------------------
-                                # Methylation based gene filters
-                                # 3. Genes with <2 CpGs assayed within +/-5kb of the TSS
-                                #
-                for cpos in range( (reg_start-interp_bin), (reg_end+interp_bin)+1 ):
-                    try:
-                        dmet_tmp.append(dict_bed[chrom][cpos])
-                        cpos_tmp.append(cpos)
-                    except KeyError:
-                        continue
-                                #
-                if len(dmet_tmp) < args.min_re_meth:
-                    sys.stderr.write(gene_id + ' has < ' +  str(args.min_re_meth) \
-                                 + ' CpGs assayed in ' + sample_id + '\n')
-                    continue
-                                #
-#                if max(dmet_tmp) < 0.2
-#                    sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
-#                    continue
-                                #-----------------------------------------------------------------------------
-                if not args.flankNorm:
-                    anchor_window = 0
-#                if args.flankNorm:
-                for cpos in range( reg_start-(interp_bin+anchor_window), reg_end+(interp_bin+anchor_window)+1 ):
-                    try:
-                        dmet_dat.append(dict_bed[chrom][cpos])
-                        cpos_dat.append(cpos)
-                    except KeyError:
-                        continue
+        if max(dmet_tmp) < args.min_gene_meth:
+            print_to_log(log_FH, gene.id + ' has < ' + str(args.min_gene_meth) +' maximum methylation change in ' + sample_id + '\n')
+            continue
+        #-----------------------------------------------------------------------------    
+        if not args.flankNorm: # Endpoint correction will be used in this case
+            anchor_window = 0
+#        if args.flankNorm:
+        for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+                dmet_dat.append(dict_bed[gene.chr][cpos])
+                cpos_dat.append(cpos)
+        # Missing anchor            
+        if args.flankNorm and \
+            (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
+            ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+            print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+            continue 
+        # Gather interpolated data
+        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
+        # cross-check number of interpolated features
+        if len(interpolated_dmet_data) != args.num_interp_points:
+            eprint('Inconsistent number of interpolation features!')
+            exit() # Exit if number is inconsistent 
+        # Write data
+        out_data = out_data + '\n'+gene.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
+        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+    return out_data
 
+def interp_regions(region_list, dict_bed, sample_id, log_FH, args):
+    reg_type = 're'
+    interp_bin = 500 # for model gene plots
+    # Regulatory Elements
+    for region in region_list: # regulatory elements
+        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+        #for reg_info in file_lines:
+        #    reg_items = reg_info.strip().split()
+        #    gene_id, chrom, strand, reg_start, reg_end = \
+        #            reg_items[0], reg_items[1], reg_items[2], int(reg_items[5]), int(reg_items[6])
+        print_to_log(log_FH, region.id+'\n')
+                            # ----------------------------------------------------------------------------
+                            # Methylation based gene filters
+                            # 3. Genes with <2 CpGs assayed within +/-5kb of the TSS
+                            #
+        for cpos in range( (region.start-interp_bin), (region.end+interp_bin)+1 ):
+            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
+                dmet_tmp.append(dict_bed[region.chr][cpos])
+                cpos_tmp.append(cpos)
+        if len(dmet_tmp) < args.min_re_cpgs:
+            print_to_log(log_FH,region.id + ' has < ' +  str(args.min_re_cpgs) \
+                        + ' CpGs assayed in ' + sample_id + '\n')
+            continue
+                               #
+#       if max(dmet_tmp) < 0.2
+#           sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
+#           continue
+        #-----------------------------------------------------------------------------
+        if not args.flankNorm:
+            anchor_window = 0
+#        if args.flankNorm:
+        for cpos in range( region.start-(interp_bin+anchor_window), region.end+(interp_bin+anchor_window)+1 ):
+            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
+                dmet_dat.append(dict_bed[region.chr][cpos])
+                cpos_dat.append(cpos)
                 # Missing anchor
-                if args.flankNorm and \
-                    (( cpos_dat[0] not in range( reg_start-(interp_bin+anchor_window), reg_start-interp_bin ) ) or \
-                    ( cpos_dat[-1] not in range( reg_end+interp_bin+1, reg_end+(interp_bin+anchor_window)+1 ) )):
-                    sys.stderr.write(gene_id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
-                    continue
+        if args.flankNorm and \
+            (( cpos_dat[0] not in range( region.start-(interp_bin+anchor_window), region.start-interp_bin ) ) or \
+            ( cpos_dat[-1] not in range( region.end+interp_bin+1, region.end+(interp_bin+anchor_window)+1 ) )):
+            print_to_log(log_FH,region.id + ' has no CpGs in anchor windows in ' + sample_id + '\n')
+            continue
 
-                # Gather interpolated data
-                interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, reg_start, reg_end, strand, reg_type, args).dat_proc()
-                # cross-check number of interpolated features
-                if len(interpolated_dmet_data) != num_intrp_point:
-                    sys.stdout.write(str(len(interpolated_dmet_data)))
-                    sys.stdout.write('Inconsistent number of interpolation features!')
-                    sys.exit()
-                # Write data
-                #if len(interpolated_dmet_data) > 0:
-                dict_re_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
-                dict_re_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
-                del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
-        dict_bed.clear()
-        del dict_bed
-    # Write data to a file
-    for file_id, out_lines in dict_gene_out.items(): 
-         open(args.tag_inp+'_gene_interp.csv', 'w').write(''.join(out_lines))
-    for file_id, out_lines in dict_re_out.items():
-        open(file_id+'_'+args.tag_inp+'_re_interp.csv', 'w').write(''.join(out_lines))
+        # Gather interpolated data
+        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, region.start, region.end, region.strand, reg_type, args).dat_proc()
+        # cross-check number of interpolated features
+        if len(interpolated_dmet_data) != args.num_interp_points:
+            print_to_log(log_FH,str(len(interpolated_dmet_data)))
+            print_to_log(log_FH,'Inconsistent number of interpolation features!')
+            exit()
+        # Write data
+        #if len(interpolated_dmet_data) > 0:
+        #dict_re_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
+        #dict_re_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
+        out_data = out_data + '\n'+region.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
+        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+    return out_data                  
         
 def exec_interp_help(parser):
     parser_required = parser.add_argument_group('required arguments')
-    parser_required.add_argument('-rfn', action='store', dest='rfn_inp', required=True, help='Region fofn')
-    parser_required.add_argument('-tag', action='store', dest='tag_inp', required=True, help='Tag for output')
-    parser_required.add_argument('-sfn', action='store', dest='sfn_inp', required=True, help='Sample file name')
-    parser.add_argument('-sigma', action='store', dest='sigma_inp', type=int, default=50, help='Value of sigma')
-    parser.add_argument('-nip', action='store', dest='nip_inp', type=int, default=500, help='Number of interp points')
-    parser.add_argument('-ibin', action='store', dest='ibin_inp', type=int, default=5000, help='Size of bin around TSS/GB')
-    parser.add_argument('-ach', action='store', dest='anch_win', type=int, default=100000, help='Anchor window')
-    parser.add_argument('-rfl', action='store', dest='refl_inp', type=int, default=500, help='RE flnk length')
-    parser.add_argument('-rff', action='store', dest='reff_inp', type=int, default=25, help='RE flnk features')
-    parser.add_argument('-fln', action='store_true', dest='flankNorm', default=False, help='Flank Normalized interpolation')
-    parser.add_argument('-gsl', action='store_true', dest='geneSelect', default=False, help='Interpolation  for slected genes?')
+    #parser_required.add_argument('-rfn', action='store', dest='rfn_inp', required=True, help='Region fofn')
+    parser_required.add_argument('-a','--anno_file', required=True, help='region or gene annotation file')
+    parser_required.add_argument('-t', dest='tag_inp', required=True, help='Tag for output')
+    parser_required.add_argument('-i', '--input_list', required=True, help='List of sample pairs')
+    parser_required.add_argument('--anno_type', default="gene_tss", help='region or gene annotation file')
+    parser.add_argument('--sigma', type=int, default=50, help='Value of sigma for Gaussian smoothing')
+    parser.add_argument('--num_interp_points', type=int, default=500, help='Number of interp points')
+    parser.add_argument('-ibin', dest='ibin_inp', type=int, default=5000, help='Size of bin around TSS/GB')
+    parser.add_argument('-ach', dest='anch_win', type=int, default=100000, help='Anchor window')
+    parser.add_argument('-rfl', dest='refl_inp', type=int, default=500, help='RE flnk length')
+    parser.add_argument('-rff', dest='reff_inp', type=int, default=25, help='RE flnk features')
+    parser.add_argument('--flankNorm', action='store_true', default=False, help='Flank Normalized interpolation')
+    parser.add_argument('--geneSelect', action='store_true', default=False, help='Interpolation  for slected genes?')
     parser.add_argument('-frf', action='store_true', dest='fixedReFlnk', default=False, help='Fixed features for RE flank')
-    parser.add_argument('-mmg', action='store', dest='min_gene_meth', type=int, default=40, help='Minimum CpGs assayed')
-    parser.add_argument('-mmr', action='store', dest='min_re_meth', type=int, default=2, help='Minimum CpGs assayed')
+    parser.add_argument('--min_gene_cpgs', type=int, default=40, help='Minimum CpGs assayed')
+    parser.add_argument('--min_gene_meth', type=float, default=0.2, help='Must have at least 1 CpG with at least this meth diff')
+    parser.add_argument('--min_gene_length', type=int, default=5000, help='Min. gene length, ideally shorter than window size')
+    parser.add_argument('--filter_cdsStats', action='store_true', default=True, help='Whether to filter on the cdsStart and cdsEnd as cmpl' )
+    parser.add_argument('--min_reg_cpgs', type=int, default=2, help='Minimum CpGs assayed in region')
+    parser.add_argument('--logfile', dest='logfile', default='interpolation.log', help='log file')
+    parser.add_argument('-o', '--output_path', action='store', dest='output_path',
+        default='intermediate_files', help='Path to Output')
     parser._action_groups.reverse()
     return(parser)

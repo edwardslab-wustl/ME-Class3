@@ -7,8 +7,8 @@ class Interpolation:
         #
         self.cpos_raw = cpos_dat
         self.dmet_raw = dmet_dat
-        self.sigma = args.sigma_inp # 50
-        self.num_intrp_point = args.nip_inp #5
+        self.sigma = args.sigma # 50
+        self.num_intrp_point = args.num_interp_points #5
         self.anchor_window = args.anch_win
         self.re_flnk_len = args.refl_inp
         self.re_flnk_fetrs = args.reff_inp    

@@ -17,3 +17,13 @@ def read_sample_pair (file, num):
     df_bed['idx_value'+num] = df_bed['chrom'+num]+'_'+df_bed['start'+num].astype(str)
     df_bed = df_bed.set_index('idx_value'+num)
     return(df_bed)
+
+def read_sample_file (input_list_file):
+    pair_list = []
+    with open(input_list_file, 'r') as input_list_FH:
+        for line in input_list_FH:
+            if not line.startswith('#'):
+                (tag1, file1, tag2, file2) = line.strip().split()
+                name = "_".join((tag1, tag2))
+                pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
+    return pair_list

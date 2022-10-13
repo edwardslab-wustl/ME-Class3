@@ -2,21 +2,14 @@ import pandas as pd
 
 from io_functions import mk_output_dir
 from io_functions import print_to_log
-from sample import SamplePair
 from sample import read_sample_pair
+from sample import read_sample_file
 
 def exec_proc_sample(args):
-    input_list_file = args.input_list
+    pair_list = read_sample_file(args.input_list)
     output_path = args.output_path
     mk_output_dir(output_path)
     with open(args.logfile, 'w') as log_FH:
-        pair_list = []
-        with open(input_list_file, 'r') as input_list_FH:
-            for line in input_list_FH:
-                if not line.startswith('#'):
-                    (tag1, file1, tag2, file2) = line.strip().split()
-                    name = "_".join((tag1, tag2))
-                    pair_list.append(SamplePair(name, tag1, file1, tag2, file2))
         for sample_pair in pair_list:
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
             df1_bed = read_sample_pair(sample_pair.file1, 1)
@@ -91,10 +84,10 @@ def exec_proc_sample_help(parser):
     #    dest='expr_input', required=True, help='Name of expression file')
     parser.add_argument('-o', '--output_path', action='store', dest='output_path',
         default='intermediate_files', help='Path to Output')
+    parser.add_argument('--sig_digits', action='store', type=int,
+        default=3, help='Significant digits for methylation difference')
     parser.add_argument('--logfile', action='store', dest='logfile',
         default='proc_sample.log', help='log file')
-    parser.add_argument('--sig_digits', action='store',
-        default=3, help='Significant digits for methylation difference')
     parser._action_groups.reverse()
     return(parser)
 
