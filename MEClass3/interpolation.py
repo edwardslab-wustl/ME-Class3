@@ -12,11 +12,13 @@ from MEClass3.sample import read_sample_file
 
 
 def generate_out_header(num_pts, anno_type):
-    header = 'gene_id-sample_name'
+    header = ''
     if anno_type == 'gene_tss':
+        header = 'gene_id-sample_name'
         for pos in range(num_pts):
             header = header + (',ftss_'+str(pos))
     elif anno_type == 'enh':
+        header = 'enh_loc-gene_id-sample_name'
         for pos in range(num_pts):
             #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
             header = header + (',fre_'+str(pos)) 
