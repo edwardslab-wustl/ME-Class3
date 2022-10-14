@@ -15,6 +15,7 @@ from MEClass3.proximity_list import exec_proximity_list, exec_proximity_list_hel
 from MEClass3.process_regions import exec_proc_reg, exec_proc_reg_help
 from MEClass3.classifier import exec_run_clf, exec_run_clf_help
 from MEClass3.evaluation import exec_eval, exec_eval_help
+from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
 
 def main():
     meclass3_description = '''Tool for integrative analysis of methylation and expression data'''
@@ -74,6 +75,12 @@ def setup_subcommands():
                                 help_function=exec_eval_help,
                                 help = "Evaluation",
                                 desc = "Evaluation description"))
+
+    subcommands.append( Subcommand( name="merge_data", 
+                                function=exec_merge_data,
+                                help_function=exec_merge_data_help,
+                                help = "Merge data",
+                                desc = "Merge data description"))
 
     subcommands.append( Subcommand( name="proc_reg", 
                                 function=exec_proc_reg,

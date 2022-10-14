@@ -1,9 +1,9 @@
 import pandas as pd
 
-from io_functions import mk_output_dir
-from io_functions import print_to_log
-from sample import read_sample_pair
-from sample import read_sample_file
+from MEClass3.io_functions import mk_output_dir
+from MEClass3.io_functions import print_to_log
+from MEClass3.sample import read_sample_pair
+from MEClass3.sample import read_sample_file
 
 def exec_proc_sample(args):
     pair_list = read_sample_file(args.input_list)
@@ -24,7 +24,6 @@ def exec_proc_sample(args):
             del df1_bed, df2_bed, df_merged
         
 def exec_proc_sample_wheel(args):
-    
     ctp_fofn = args.ctp_inp
     path_to_output = args.pto_inp
     expr_file = args.expr_inp
