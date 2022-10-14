@@ -293,6 +293,6 @@ def exec_run_clf_help(parser):
     parser.add_argument('-ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
     parser.add_argument('-ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
     parser.add_argument('--logfile', action='store', dest='logfile',
-        default='merge_data.log', help='log file')
+        default='classify.log', help='log file')
     #parser._action_groups.reverse()
     return(parser)
