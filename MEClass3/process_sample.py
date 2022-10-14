@@ -2,8 +2,10 @@ import pandas as pd
 
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import print_to_log
-from MEClass3.sample import read_sample_pair
+from MEClass3.io_functions import eprint
+from MEClass3.sample import read_bed_methyl_data
 from MEClass3.sample import read_sample_file
+from MEClass3.sample import read_bedms_methyl_data
 
 def exec_proc_sample(args):
     pair_list = read_sample_file(args.input_list)
@@ -12,8 +14,15 @@ def exec_proc_sample(args):
     with open(args.logfile, 'w') as log_FH:
         for sample_pair in pair_list:
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
-            df1_bed = read_sample_pair(sample_pair.file1, 1)
-            df2_bed = read_sample_pair(sample_pair.file2, 2)
+            if args.data_format == 'bed':
+                df1_bed = read_bed_methyl_data(sample_pair.file1, 1, args.divide_by_100)
+                df2_bed = read_bed_methyl_data(sample_pair.file2, 2, args.divide_by_100)
+            elif args.data_format == 'bedms':
+                df1_bed = read_bedms_methyl_data(sample_pair.file1, 1, args.divide_by_100)
+                df2_bed = read_bedms_methyl_data(sample_pair.file2, 2, args.divide_by_100)
+            else:
+                eprint("Unrecognized data format: " + args.data_format + "\n")
+                exit
             df_merged = df_merged = pd.concat( [ df1_bed, df2_bed ], axis=1, join='inner')
             df_merged['dcm'] = (df_merged['value2'] - df_merged['value1']).round(args.sig_digits)
             output_file = sample_pair.name +'.bedgraph'
@@ -22,7 +31,32 @@ def exec_proc_sample(args):
             df1_bed.drop(df1_bed.index, inplace=True)
             df2_bed.drop(df2_bed.index, inplace=True)
             del df1_bed, df2_bed, df_merged
-        
+  
+def exec_proc_sample_help(parser):
+    parser_required = parser.add_argument_group('required arguments')
+    parser_required.add_argument('-i', '--input_list', action='store',
+        dest='input_list', required=True, help='Input list of sample names and file locations for pairings.')
+    #parser_required.add_argument('-e', '--expr', action='store',
+    #    dest='expr_input', required=True, help='Name of expression file')
+    parser.add_argument('-o', '--output_path', action='store', dest='output_path',
+        default='intermediate_files', help='Path to Output')
+    parser.add_argument('--data_format', choices=('bed', 'bedms'), default='bed',
+        help='format of data files, see README.md for more info on types')
+    parser.add_argument('--sig_digits', action='store', type=int,
+        default=3, help='Significant digits for methylation difference')
+    parser.add_argument('--divide_by_100', action='store_true', default=False,
+        help="divide methylation values by 100 to put on range [0,1]")
+    parser.add_argument('--logfile', action='store', dest='logfile',
+        default='proc_sample.log', help='log file')
+    parser._action_groups.reverse()
+    return(parser)
+
+
+
+###########################
+# OLD CODE
+###########################
+      
 def exec_proc_sample_wheel(args):
     ctp_fofn = args.ctp_inp
     path_to_output = args.pto_inp
@@ -75,20 +109,6 @@ def exec_proc_sample_wheel(args):
         df1_bed.drop(df1_bed.index, inplace=True)
         del df1_bed, df2_bed, df_merged
 
-def exec_proc_sample_help(parser):
-    parser_required = parser.add_argument_group('required arguments')
-    parser_required.add_argument('-i', '--input_list', action='store',
-        dest='input_list', required=True, help='Input list of sample names and file locations for pairings.')
-    #parser_required.add_argument('-e', '--expr', action='store',
-    #    dest='expr_input', required=True, help='Name of expression file')
-    parser.add_argument('-o', '--output_path', action='store', dest='output_path',
-        default='intermediate_files', help='Path to Output')
-    parser.add_argument('--sig_digits', action='store', type=int,
-        default=3, help='Significant digits for methylation difference')
-    parser.add_argument('--logfile', action='store', dest='logfile',
-        default='proc_sample.log', help='log file')
-    parser._action_groups.reverse()
-    return(parser)
 
 def exec_proc_sample_wheel_help(parser):
     parser_required = parser.add_argument_group('required arguments')
