@@ -18,13 +18,13 @@ def add_tss_interp(df_interp, file):
     df_merged = df_merged.fillna(0)
     return df_merged
 
-def fix_column_headers (df, tag):
+def fix_column_headers(df, tag):
     new_headers = []
     for num, header in enumerate(df.columns):
         if num == 0 or num == len(df.columns) - 1 or num == len(df.columns) - 2:
             new_headers.append(header)
         else:
-            new_headers.append(tag+ "_" + header)
+            new_headers.append(header + "_" + tag)
     df.columns = new_headers
     return df
         
