@@ -3,6 +3,9 @@ import re
 import resource
 import gzip
 
+import multiprocessing as mp
+from itertools import repeat
+
 from MEClass3.Interpolation_class import Interpolation
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import read_anno_file 
@@ -66,7 +69,8 @@ def exec_interp(args):
                         keep_flag = False
                     if keep_flag:
                         anno_list_postfilter.append(gene)
-                out_data = interp_genes(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                #out_data = interp_genes(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                out_data = interp_genes_mp(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
                 out_data = out_header + out_data
                 out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
             elif anno_type == 'enh':
@@ -81,7 +85,70 @@ def exec_interp(args):
                 out_FH.write(out_data)
             dict_bed.clear()
             del dict_bed
-            
+ 
+def interp_genes_mp(gene_list, dict_bed, sample_id, log_FH, args):
+    arg_iterable = zip(gene_list, repeat(dict_bed), repeat(sample_id), repeat(args))
+    with mp.Pool(processes=args.num_proc) as pool:
+        results = pool.starmap(interp_gene, arg_iterable)
+    final_results = []
+    for result in results:
+        if result != 'na':
+            final_results.append(result)
+    return "\n" + "\n".join(final_results)
+    
+def interp_gene(gene, dict_bed, sample_id, args):
+    result = 'na'
+    interp_bin = args.ibin_inp
+    reg_type='gene'
+    cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+    tss = gene.tss()
+    tes = gene.tes()
+    #print_to_log(log_FH, gene.id + "\n")
+    # ----------------------------------------------------------------------------
+    # Methylation based gene filters
+    # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
+    # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
+    for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
+        if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+            dmet_tmp.append(dict_bed[gene.chr][cpos])
+            cpos_tmp.append(cpos)
+    filter_flag = False
+    if len(dmet_tmp) < args.min_gene_cpgs:
+    #    print_to_log(log_FH, gene.id + ' has < ' +  str(args.min_gene_cpgs)  + ' CpGs assayed in ' + sample_id + '\n')
+        filter_flag = True
+    elif max(dmet_tmp) < args.min_gene_meth:
+    #    print_to_log(log_FH, gene.id + ' has < ' + str(args.min_gene_meth) +' maximum methylation change in ' + sample_id + '\n')
+        filter_flag = True
+    #-----------------------------------------------------------------------------    
+    if not args.flankNorm: # Endpoint correction will be used in this case
+        anchor_window = 0
+#    if args.flankNorm:
+    for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+        if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+            dmet_dat.append(dict_bed[gene.chr][cpos])
+            cpos_dat.append(cpos)
+    # Missing anchor            
+    if args.flankNorm and \
+        (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
+        ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+        #print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+        filter_flag = True
+    if not filter_flag:
+        # Gather interpolated data
+        eprint(gene.id)
+        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
+        # cross-check number of interpolated features
+        if len(interpolated_dmet_data) != args.num_interp_points:
+            eprint('Inconsistent number of interpolation features: ' + gene.id)
+            #exit() # Exit if number is inconsistent 
+        # Write data
+        else:
+            result = gene.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
+    del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+    #eprint(result)
+    #print_to_log(log_FH, result + "\n")
+    return result
+
 def interp_genes(gene_list, dict_bed, sample_id, log_FH, args):
     out_data = ''
     interp_bin = args.ibin_inp
@@ -184,6 +251,7 @@ def exec_interp_help(parser):
                                  choices=["gene_tss", "enh"],
                                  help='region or gene annotation file')
     parser.add_argument('--sigma', type=int, default=50, help='Value of sigma for Gaussian smoothing')
+    parser.add_argument('--num_proc', type=int, default=2, help='number of processes to run')
     parser.add_argument('--num_interp_points', type=int, default=500, help='Number of interp points')
     parser.add_argument('-ibin', dest='ibin_inp', type=int, default=5000, help='Size of bin around TSS/GB')
     parser.add_argument('-ach', dest='anch_win', type=int, default=100000, help='Anchor window')
