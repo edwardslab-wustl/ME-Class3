@@ -13,6 +13,15 @@ from MEClass3.sample import read_bedms_methyl_data
 
 def exec_preprocess(args):
     pair_list = read_sample_file(args.input_list)
+    if args.sample:
+        sample_set_flag = False
+        for sample_pair in pair_list:
+            if args.sample == sample_pair.name:
+                pair_list = [ sample_pair ]
+                sample_set_flag = True
+        if not sample_set_flag:
+            eprint("Can't find sample name " + args.sample + " in pair list. Check pair list and sample name and rerun.")
+            exit()
     output_path = args.output_path
     mk_output_dir(output_path)
     with open(args.logfile, 'w') as log_FH:
@@ -43,6 +52,7 @@ def exec_preprocess_help(parser):
         dest='input_list', required=True,
         default=argparse.SUPPRESS,
         help='Input list of sample names and file locations for pairings.')
+    parser.add_argument('--sample', default=None, help='Use to select specific sample from pair list and only run that one.')
     parser.add_argument('-o', '--output_path', action='store',
         default='intermediate_files', help='Path to Output')
     parser.add_argument('--data_format', choices=('bed', 'bedms'), default='bed',
