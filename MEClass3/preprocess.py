@@ -52,7 +52,7 @@ def exec_preprocess_help(parser):
     parser.add_argument('--divide_by_100', action='store_true', default=False,
         help="divide methylation values by 100 to put on range [0,1]")
     parser.add_argument('--logfile', action='store', dest='logfile',
-        default='proc_sample.log', help='log file')
+        default='preprocess.log', help='log file')
     parser._action_groups.reverse()
     return(parser)
 
