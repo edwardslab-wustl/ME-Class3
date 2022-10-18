@@ -2,6 +2,7 @@ import sys
 import re
 import resource
 import gzip
+import time
 
 import multiprocessing as mp
 from itertools import repeat
@@ -35,9 +36,17 @@ def exec_interp(args):
     anno_file = args.anno_file
     anno_type = args.anno_type
     #reg_fofn = args.rfn_inp
-    pair_list = read_sample_file(args.input_list)
     out_header = generate_out_header(args.num_interp_points, anno_type)
-    
+    pair_list = read_sample_file(args.input_list)
+    if args.sample:
+        sample_set_flag = False
+        for sample_pair in pair_list:
+            if args.sample == sample_pair.name:
+                pair_list = [ sample_pair ]
+                sample_set_flag = True
+        if not sample_set_flag:
+            eprint("Can't find sample name " + args.sample + " in pair list. Check pair list and sample name and rerun.")
+            exit()
     anchor_window = args.anch_win
     with open(args.logfile, 'w') as log_FH:
         anno_list_prefilter = read_anno_file(anno_file, anno_type)
@@ -70,7 +79,13 @@ def exec_interp(args):
                     if keep_flag:
                         anno_list_postfilter.append(gene)
                 #out_data = interp_genes(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
-                out_data = interp_genes_mp(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                tic = time.perf_counter()
+                if args.num_proc == 0:
+                    out_data = interp_genes_sp(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                else:
+                    out_data = interp_genes_mp(anno_list_postfilter, dict_bed, sample_id, log_FH, args)
+                toc = time.perf_counter()
+                eprint(f"Ran interpolation in {toc - tic:0.4f} seconds")
                 out_data = out_header + out_data
                 out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
             elif anno_type == 'enh':
@@ -86,10 +101,21 @@ def exec_interp(args):
             dict_bed.clear()
             del dict_bed
  
+def interp_genes_sp(gene_list, dict_bed, sample_id, log_FH, args):
+    final_results = []
+    for gene in gene_list:
+        result = interp_gene(gene, dict_bed, sample_id, args)
+        if result != 'na':
+            final_results.append(result)
+    return "\n" + "\n".join(final_results)
+    
 def interp_genes_mp(gene_list, dict_bed, sample_id, log_FH, args):
     arg_iterable = zip(gene_list, repeat(dict_bed), repeat(sample_id), repeat(args))
     with mp.Pool(processes=args.num_proc) as pool:
-        results = pool.starmap(interp_gene, arg_iterable)
+        #results = pool.starmap(interp_gene, arg_iterable,chunksize=10)
+        #res = pool.starmap_async(interp_gene, arg_iterable,chunksize=10)
+        res = pool.starmap_async(interp_gene, arg_iterable)
+        results = res.get()
     final_results = []
     for result in results:
         if result != 'na':
@@ -103,14 +129,16 @@ def interp_gene(gene, dict_bed, sample_id, args):
     cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
     tss = gene.tss()
     tes = gene.tes()
+    dict_cpg = dict_bed[gene.chr]
     #print_to_log(log_FH, gene.id + "\n")
     # ----------------------------------------------------------------------------
     # Methylation based gene filters
     # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
     # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
     for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
-        if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
-            dmet_tmp.append(dict_bed[gene.chr][cpos])
+        #if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+        if cpos in dict_cpg:
+            dmet_tmp.append(dict_cpg[cpos])
             cpos_tmp.append(cpos)
     filter_flag = False
     if len(dmet_tmp) < args.min_gene_cpgs:
@@ -120,26 +148,29 @@ def interp_gene(gene, dict_bed, sample_id, args):
     #    print_to_log(log_FH, gene.id + ' has < ' + str(args.min_gene_meth) +' maximum methylation change in ' + sample_id + '\n')
         filter_flag = True
     #-----------------------------------------------------------------------------    
-    if not args.flankNorm: # Endpoint correction will be used in this case
-        anchor_window = 0
-#    if args.flankNorm:
-    for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
-        if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
-            dmet_dat.append(dict_bed[gene.chr][cpos])
-            cpos_dat.append(cpos)
-    # Missing anchor            
-    if args.flankNorm and \
-        (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
-        ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
-        #print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
-        filter_flag = True
+    else:
+        if not args.flankNorm: # Endpoint correction will be used in this case
+            anchor_window = 0
+    #    if args.flankNorm:
+        for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+            #if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+            if cpos in dict_cpg:
+                dmet_dat.append(dict_cpg[cpos])
+                cpos_dat.append(cpos)
+        # Missing anchor            
+        if args.flankNorm and \
+            (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
+            ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+            #print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+            filter_flag = True
     if not filter_flag:
         # Gather interpolated data
-        eprint(gene.id)
+        #eprint(gene.id)
         interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
         # cross-check number of interpolated features
         if len(interpolated_dmet_data) != args.num_interp_points:
-            eprint('Inconsistent number of interpolation features: ' + gene.id)
+            #eprint('Inconsistent number of interpolation features: ' + gene.id)
+            result = 'Inconsistent number of interpolation features: ' + gene.id
             #exit() # Exit if number is inconsistent 
         # Write data
         else:
@@ -250,6 +281,7 @@ def exec_interp_help(parser):
     parser_required.add_argument('--anno_type', default="gene_tss", 
                                  choices=["gene_tss", "enh"],
                                  help='region or gene annotation file')
+    parser.add_argument('--sample', default=None, help='Use to select specific sample from pair list and only run that one.')
     parser.add_argument('--sigma', type=int, default=50, help='Value of sigma for Gaussian smoothing')
     parser.add_argument('--num_proc', type=int, default=2, help='number of processes to run')
     parser.add_argument('--num_interp_points', type=int, default=500, help='Number of interp points')
