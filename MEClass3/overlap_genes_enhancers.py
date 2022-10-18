@@ -6,7 +6,7 @@ from MEClass3.io_functions import read_enhancer_file
 from MEClass3.io_functions import read_gene_file
 from MEClass3.io_functions import print_to_log
 
-def exec_proximity_list(args):
+def exec_overlap_genes_enhancers(args):
     # This part of code generate proximity list of regulatory elements
     # add orientation relative to TSS, in addition to n and p.
     p_sidx = args.pst_inp # 1
@@ -68,7 +68,7 @@ def exec_proximity_list(args):
         with open(args.outFile, 'w') as out_FH:
             out_FH.write(out_data)
 
-def exec_proximity_list_help(parser):
+def exec_overlap_genes_enhancers_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-a','--anno_file', required=True,
         default=argparse.SUPPRESS,

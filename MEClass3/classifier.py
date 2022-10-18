@@ -43,7 +43,7 @@ def normalize_labels(df):
         del idx
     return df
     
-def exec_run_clf(args):
+def exec_classify(args):
     # Load data csv file
     df = read_interp_files(args.interp_files)
 #    df = ( pd.read_csv(args.dfi_inp) ).set_index('gene_id-sample_name')
@@ -278,7 +278,7 @@ def exec_run_clf(args):
         open(args.tag+'_fi_out.txt', 'w').write(''.join(dfi_items))
  
  
-def exec_run_clf_help(parser):
+def exec_classify_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('interp_files', metavar='interp_files', type=str, nargs='+',
         default=argparse.SUPPRESS,

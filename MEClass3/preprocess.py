@@ -10,7 +10,7 @@ from MEClass3.sample import read_bed_methyl_data
 from MEClass3.sample import read_sample_file
 from MEClass3.sample import read_bedms_methyl_data
 
-def exec_proc_sample(args):
+def exec_preprocess(args):
     pair_list = read_sample_file(args.input_list)
     output_path = args.output_path
     mk_output_dir(output_path)
@@ -35,7 +35,7 @@ def exec_proc_sample(args):
             df2_bed.drop(df2_bed.index, inplace=True)
             del df1_bed, df2_bed, df_merged
   
-def exec_proc_sample_help(parser):
+def exec_preprocess_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-i', '--input_list', action='store',
         dest='input_list', required=True,
