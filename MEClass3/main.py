@@ -9,7 +9,7 @@ from MEClass3.subcommand_parser_functions import setup_subparsers, Subcommand
 from MEClass3.preprocess import exec_preprocess, exec_preprocess_help
 from MEClass3.interpolation import exec_interp, exec_interp_help
 from MEClass3.overlap_genes_enhancers import exec_overlap_genes_enhancers, exec_overlap_genes_enhancers_help
-from MEClass3.classifier import exec_classify, exec_classify_help
+from MEClass3.classify import exec_classify, exec_classify_help
 from MEClass3.evaluation import exec_eval, exec_eval_help
 from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
 #from MEClass3.filter import exec_filter, exec_filter_help

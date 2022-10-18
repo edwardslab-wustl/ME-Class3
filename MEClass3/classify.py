@@ -1,15 +1,13 @@
 import argparse
-import sys
 import resource 
 
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
-from sklearn.metrics import f1_score
-from sklearn.metrics import accuracy_score
 
 from MEClass3.io_functions import print_to_log
+from MEClass3.io_functions import format_args_to_print
 from MEClass3.sample import read_sample_file
 
 def read_interp_files(file_list):
@@ -69,6 +67,7 @@ def exec_classify(args):
     df_fi = pd.DataFrame(columns=feature_column_names)
     #===============================================
     with open(args.logfile, 'w') as log_FH:
+        print_to_log(log_FH, format_args_to_print(args))
         #if args.ss:
         if len(pair_list) == 1:
             if args.gnorm:
