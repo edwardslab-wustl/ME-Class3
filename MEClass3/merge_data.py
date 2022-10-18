@@ -1,5 +1,6 @@
 
 import sys
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -127,8 +128,11 @@ def exec_merge_data(args):
 def exec_merge_data_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-i', '--input_list', action='store',
-        dest='input_list', required=True, help='Input list of sample names and file locations for pairings.')
+        dest='input_list', required=True, 
+        default=argparse.SUPPRESS,
+        help='Input list of sample names and file locations for pairings.')
     parser_required.add_argument('-e', '--expr',
+        default=argparse.SUPPRESS,
         required=True, help='Name of expression file')
     parser.add_argument('-p', '--file_path',
         default='intermediate_files', help='Path to directory with interpolation files')

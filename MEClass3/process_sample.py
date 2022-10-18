@@ -1,3 +1,6 @@
+
+import argparse
+
 import pandas as pd
 
 from MEClass3.io_functions import mk_output_dir
@@ -35,10 +38,10 @@ def exec_proc_sample(args):
 def exec_proc_sample_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-i', '--input_list', action='store',
-        dest='input_list', required=True, help='Input list of sample names and file locations for pairings.')
-    #parser_required.add_argument('-e', '--expr', action='store',
-    #    dest='expr_input', required=True, help='Name of expression file')
-    parser.add_argument('-o', '--output_path', action='store', dest='output_path',
+        dest='input_list', required=True,
+        default=argparse.SUPPRESS,
+        help='Input list of sample names and file locations for pairings.')
+    parser.add_argument('-o', '--output_path', action='store',
         default='intermediate_files', help='Path to Output')
     parser.add_argument('--data_format', choices=('bed', 'bedms'), default='bed',
         help='format of data files, see README.md for more info on types')

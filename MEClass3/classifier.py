@@ -1,3 +1,4 @@
+import argparse
 import sys
 import resource 
 
@@ -280,18 +281,20 @@ def exec_run_clf(args):
 def exec_run_clf_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('interp_files', metavar='interp_files', type=str, nargs='+',
-                    help='interpolation files for classification')
+        default=argparse.SUPPRESS,
+        help='interpolation files for classification')
     parser_required.add_argument('-i', '--input_list', dest='input_list',
+        default=argparse.SUPPRESS,
         required=True, help='Input list of sample names and file locations for pairings.')
     #parser_required.add_argument('-dfi', action='store', dest='dfi_inp', required=True, help='Dataframe output from interpolation step')
     parser.add_argument('--num_trees', type=int, default=5001, help='Number of trees for Random Forest Classifier')
     parser.add_argument('-t', '--threads', type=int, default=8, help='Number of Processors for RF run')
     parser.add_argument('--folds', type=int, default=10, help='Number of folds for genes in CVF')
     parser.add_argument('--tag', default='classifier_results', help='Tag for Output Writing')
-    parser.add_argument('-fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
-    parser.add_argument('-suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
-    parser.add_argument('-ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
-    parser.add_argument('-ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
+    parser.add_argument('--fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
+    parser.add_argument('--suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
+    parser.add_argument('--ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
+    parser.add_argument('--ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
     parser.add_argument('--logfile', action='store', dest='logfile',
         default='classify.log', help='log file')
     #parser._action_groups.reverse()

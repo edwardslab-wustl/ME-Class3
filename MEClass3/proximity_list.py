@@ -1,3 +1,5 @@
+
+import argparse
 from os import getcwd
 
 from MEClass3.io_functions import read_enhancer_file
@@ -68,15 +70,18 @@ def exec_proximity_list(args):
 
 def exec_proximity_list_help(parser):
     parser_required = parser.add_argument_group('required arguments')
-    #parser_required.add_argument('-glf', action='store', dest='glf_inp', required=True, help='gene list file')
-    parser_required.add_argument('-a','--anno_file', required=True, help='gene annotation file')
-    parser_required.add_argument('-e','--enh_file', required=True, help='enhancer annotation file')
+    parser_required.add_argument('-a','--anno_file', required=True,
+        default=argparse.SUPPRESS,
+        help='gene annotation file')
+    parser_required.add_argument('-e','--enh_file', required=True,
+        default=argparse.SUPPRESS,
+        help='enhancer annotation file')
     parser.add_argument('-o', '--outFile', default='enh_gene.overlap.txt', help='output file')
-    parser.add_argument('-pst', action='store', dest='pst_inp', type=int, default=1, help='pend start index')
-    parser.add_argument('-ped', action='store', dest='ped_inp', type=int, default=2, help='pend end index')
-    parser.add_argument('-nst', action='store', dest='nst_inp', type=int, default=1, help='nend start index')
-    parser.add_argument('-ned', action='store', dest='ned_inp', type=int, default=2, help='nend end index')
-    parser.add_argument('-twn', action='store', dest='twin_inp', type=int, default=5000, help='nend end index')
+    parser.add_argument('--pst', action='store', dest='pst_inp', type=int, default=1, help='pend start index')
+    parser.add_argument('--ped', action='store', dest='ped_inp', type=int, default=2, help='pend end index')
+    parser.add_argument('--nst', action='store', dest='nst_inp', type=int, default=1, help='nend start index')
+    parser.add_argument('--ned', action='store', dest='ned_inp', type=int, default=2, help='nend end index')
+    parser.add_argument('--twn', action='store', dest='twin_inp', type=int, default=5000, help='nend end index')
     parser.add_argument('--logfile', dest='logfile', default='enh_gene_overlap.log', help='log file')
     parser._action_groups.reverse()
     return(parser)

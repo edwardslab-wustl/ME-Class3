@@ -1,4 +1,6 @@
+
 import sys
+import argparse
 
 import pandas as pd
 import numpy as np
@@ -107,7 +109,11 @@ def exec_eval(args):
 
 def exec_eval_help(parser):
     parser_required = parser.add_argument_group('required arguments')
-    parser_required.add_argument('-dfi', action='store', dest='dfi_inp', required=True, help='Dataframe output from classification')
-    parser.add_argument('-nstp', action='store', dest='steps_inp', type=int, default=101, help='Number of steps')
+    parser_required.add_argument('--dfi', action='store', dest='dfi_inp',
+        required=True,
+        default=argparse.SUPPRESS,
+        help='Dataframe output from classification')
+    parser.add_argument('--nstp', action='store', dest='steps_inp',
+        type=int, default=101, help='Number of steps in acc_reject rate curve')
     parser._action_groups.reverse()
     return(parser)
