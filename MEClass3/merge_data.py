@@ -120,7 +120,7 @@ def exec_merge_data(args):
                 df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -args.expr_cutoff, -1, df_interp['expr_flag'] )
                 df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
             # Finally write data for classifier
-            out_file = args.file_path + '/' + sample_pair.name + '.interp_expr_data.csv' 
+            out_file = args.output_path + '/' + sample_pair.name + '.interp_expr_data.csv' 
             print_to_log(log_FH, "\tprinting to outfile: " + out_file)
             df_interp.to_csv(out_file, sep=',')
 
@@ -132,6 +132,8 @@ def exec_merge_data_help(parser):
         required=True, help='Name of expression file')
     parser.add_argument('-p', '--file_path',
         default='intermediate_files', help='Path to directory with interpolation files')
+    parser.add_argument('-o', '--output_path',
+        default='intermediate_files', help='Path to directory to store output files')
     parser.add_argument('--tss', action='store_true', default=False, help='Use tss interpolation data')
     parser.add_argument('--tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
     parser.add_argument('--enh', action='store_true', default=False, help='Use enh interpolation data')
