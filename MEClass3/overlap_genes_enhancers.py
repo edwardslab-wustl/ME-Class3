@@ -5,6 +5,7 @@ from os import getcwd
 from MEClass3.io_functions import read_enhancer_file
 from MEClass3.io_functions import read_gene_file
 from MEClass3.io_functions import print_to_log
+from MEClass3.io_functions import format_args_to_print
 
 def exec_overlap_genes_enhancers(args):
     # This part of code generate proximity list of regulatory elements
@@ -20,6 +21,7 @@ def exec_overlap_genes_enhancers(args):
     delimiter = 1000 #index size
  
     with open(args.logfile, 'w') as log_FH:   
+        print_to_log(log_FH, format_args_to_print(args))
         dict_bed, dict_bed_idx =  read_enhancer_file(enhancer_file, delimiter=delimiter)
         gene_list = read_gene_file(gene_file)
         out_data = ''

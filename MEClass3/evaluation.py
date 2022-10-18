@@ -8,7 +8,6 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 
 def exec_eval(args):
-
     df = pd.read_csv( args.dfi_inp, index_col=[0] ).reset_index()
     steps = args.steps_inp
     tag = ((args.dfi_inp).strip().split('.'))[0]

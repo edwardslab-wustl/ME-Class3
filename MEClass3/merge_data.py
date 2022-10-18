@@ -1,11 +1,12 @@
 
-import sys
 import argparse
 
 import numpy as np
 import pandas as pd
 
 from MEClass3.sample import read_sample_file
+from MEClass3.io_functions import format_args_to_print
+from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import print_to_log
 
 def add_tss_interp(df_interp, file):
@@ -54,7 +55,9 @@ def exec_merge_data(args):
     expr_floor_value = args.expr_floor_val
     pair_list = read_sample_file(args.input_list)
     df_expr_all = ( pd.read_table(expr_file, index_col=False) ).set_index('gene_id')
+    mk_output_dir(args.output_path)
     with open(args.logfile, 'w') as log_FH:
+        print_to_log(log_FH, format_args_to_print(args))
         for sample_pair in pair_list:
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
             df_expr = df_expr_all.loc[:, [sample_pair.tag1, sample_pair.tag2]]

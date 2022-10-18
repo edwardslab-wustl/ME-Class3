@@ -6,6 +6,7 @@ import pandas as pd
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
+from MEClass3.io_functions import format_args_to_print
 from MEClass3.sample import read_bed_methyl_data
 from MEClass3.sample import read_sample_file
 from MEClass3.sample import read_bedms_methyl_data
@@ -15,6 +16,7 @@ def exec_preprocess(args):
     output_path = args.output_path
     mk_output_dir(output_path)
     with open(args.logfile, 'w') as log_FH:
+        print_to_log(log_FH, format_args_to_print(args))
         for sample_pair in pair_list:
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
             if args.data_format == 'bed':
