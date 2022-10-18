@@ -1,3 +1,4 @@
+import argparse
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
@@ -14,7 +15,9 @@ def setup_subparsers(parser, subcommand_data):
     subparsers.required = True
     for subcommand_item in subcommand_data:
         subparser = subparsers.add_parser( subcommand_item.name,
-                        description=subcommand_item.desc, help=subcommand_item.help)
+                        description=subcommand_item.desc, 
+                        help=subcommand_item.help,
+                        formatter_class=argparse.ArgumentDefaultsHelpFormatter )
         subparser = subcommand_item.help_function(subparser)
         subparser.set_defaults(func=subcommand_item.function)
     return parser
