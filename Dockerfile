@@ -9,6 +9,12 @@ RUN yum install -y git python3 python3-devel atlas-devel zlib-devel \
         libwebp-devel \
         && yum clean all 
 
+# dev packages (remove later)
+RUN yum install -y epel-release
+RUN yum update -y
+RUN yum install -y htop \
+    && yum clean all
+
 #Install python packages
 RUN pip3 install numpy scipy pandas matplotlib dataclasses scikit-learn
 
