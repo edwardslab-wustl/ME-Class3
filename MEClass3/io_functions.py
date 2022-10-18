@@ -5,6 +5,14 @@ import re
 import gzip
 from collections import defaultdict
 
+def format_args_to_print( args ):
+    result = '##### Input Params #####\n'
+    for arg in vars(args):
+        if arg != 'func':
+            result = result + arg + ": " + str(getattr(args, arg)) + "\n"
+    result = result + '########################\n\n'
+    return result
+
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
