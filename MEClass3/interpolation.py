@@ -52,11 +52,11 @@ def exec_interp(args):
                     anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
                 else:
                     anno_list_postfilter.append(gene)
-            out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
+            out_file_suffix = '_gene_interp.csv'
             fail_text = 'genes'
         elif anno_type == 'enh':
             anno_list_postfilter = anno_list_prefilter
-            out_file = args.output_path + "/" + sample_pair.name + '_enh_interp.csv'
+            out_file_suffix = '_enh_interp.csv'
             fail_text = 'enhancers'
         else:
             eprint("Can't recognize anno_type. Check --anno_type specification in help.")
@@ -66,6 +66,8 @@ def exec_interp(args):
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
             print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
+            out_file = args.output_path + "/" + sample_pair.name + out_file_suffix
+            print_to_log(log_FH, "outfile: " + out_file + "\n")
             dict_bed = {}
             bed_file_lines = read_bed_file(sample_file)
             chr_track = 'chr00'
@@ -87,7 +89,6 @@ def exec_interp(args):
             interp_end_time = time.perf_counter()
             print_to_log(log_FH, f"Interpolation time: {interp_end_time - interp_start_time:0.4f} seconds\n\n")
             print_to_log(log_FH, format_fail_dict(gene_fail_dict, fail_text))
-            #out_data = out_header + out_data
             with open(out_file, 'w') as out_FH:
                 out_FH.write(out_header)
                 out_FH.write(out_data)
