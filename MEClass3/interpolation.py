@@ -15,6 +15,14 @@ from MEClass3.io_functions import read_bed_file
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.sample import read_sample_file
 
+def format_fail_dict (fail_dict, fail_text):
+    result = ''
+    for status in fail_dict:
+       num_fail = len(fail_dict[status])
+       result += str(num_fail) + " " + fail_text + " failed to pass " + status + " filter.\n"
+       result += ",".join(fail_dict[status]) + "\n\n"
+    return result
+
 def exec_interp(args):
     anno_file = args.anno_file
     anno_type = args.anno_type
@@ -33,6 +41,27 @@ def exec_interp(args):
         print_to_log(log_FH, format_args_to_print(args))
         anno_list_prefilter = read_anno_file(anno_file, anno_type)
         anno_list_postfilter =[]
+        fail_text = 'regions'
+        print_to_log(log_FH, '\nSetting up Annotation Information\n')
+        anno_fail_dict = defaultdict(list)
+        if anno_type == 'gene_tss':
+            for gene in anno_list_prefilter:
+                if gene.gene_length() < args.min_gene_length:
+                    anno_fail_dict = add_fail( 'gene_length', gene.id, anno_fail_dict)
+                elif args.filter_cdsStats and ( (gene.cdsStartStat != 'cmpl') or (gene.cdsEndStat != 'cmpl') ):
+                    anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
+                else:
+                    anno_list_postfilter.append(gene)
+            out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
+            fail_text = 'genes'
+        elif anno_type == 'enh':
+            anno_list_postfilter = anno_list_prefilter
+            out_file = args.output_path + "/" + sample_pair.name + '_enh_interp.csv'
+            fail_text = 'enhancers'
+        else:
+            eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+            exit()
+        print_to_log(log_FH, format_fail_dict(anno_fail_dict, fail_text) + '\n\n')
         for sample_pair in pair_list:
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
@@ -50,37 +79,17 @@ def exec_interp(args):
             del bed_file_lines[:]
             print_to_log(log_FH, 'Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
             gene_fail_dict = defaultdict(list)
-            fail_text = 'regions'
-            if anno_type == 'gene_tss':
-                for gene in anno_list_prefilter:
-                    if gene.gene_length() < args.min_gene_length:
-                        gene_fail_dict = add_fail( 'gene_length', gene.id, gene_fail_dict)
-                    elif args.filter_cdsStats and ( (gene.cdsStartStat != 'cmpl') or (gene.cdsEndStat != 'cmpl') ):
-                        gene_fail_dict = add_fail( 'cdsStats', gene.id, gene_fail_dict)
-                    else:
-                        anno_list_postfilter.append(gene)
-                out_file = args.output_path + "/" + sample_pair.name + '_gene_interp.csv'
-                fail_text = 'genes'
-            elif anno_type == 'enh':
-                anno_list_postfilter = anno_list_prefilter
-                out_file = args.output_path + "/" + sample_pair.name + '_enh_interp.csv'
-                fail_text = 'enhancers'
-            else:
-                eprint("Can't recognize anno_type. Check --anno_type specification in help.")
-                exit()
             interp_start_time = time.perf_counter()
             if args.num_proc == 0:
                 out_data, gene_fail_dict = interp_list_sp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, log_FH, args)
             else:
                 out_data, gene_fail_dict = interp_list_mp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, log_FH, args)
             interp_end_time = time.perf_counter()
-            print_to_log(log_FH, f"Interpolation time: {interp_end_time - interp_start_time:0.4f} seconds\n")
-            out_data = out_header + out_data
-            for status in gene_fail_dict:
-                num_fail = len(gene_fail_dict[status])
-                print_to_log(log_FH, str(num_fail) + " " + fail_text + " failed to pass " + status + " filter.\n")
-                print_to_log(log_FH, ",".join(gene_fail_dict[status]) + "\n")
+            print_to_log(log_FH, f"Interpolation time: {interp_end_time - interp_start_time:0.4f} seconds\n\n")
+            print_to_log(log_FH, format_fail_dict(gene_fail_dict, fail_text))
+            #out_data = out_header + out_data
             with open(out_file, 'w') as out_FH:
+                out_FH.write(out_header)
                 out_FH.write(out_data)
             dict_bed.clear()
             del dict_bed
