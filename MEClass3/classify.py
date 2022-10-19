@@ -245,15 +245,14 @@ def exec_classify(args):
                 
                     # Feature importance.
                     #print(clf.feature_importances_)
-                    df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=feature_column_names))] )
-                
-                    print_to_log(log_FH,'Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
+                    if args.featureImportance:
+                        df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=feature_column_names))] )
                 
                     # Clear Memory
+                    print_to_log(log_FH,'Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
                     df_kf.drop(df_kf.index, inplace=True)
                     df_kf_train.drop(df_kf_train.index, inplace=True)
                     df_kf_test.drop(df_kf_test.index, inplace=True)
-                
                     del df_kf, df_kf_train, df_kf_test, clf
                 
                 df_loso.drop(df_loso.index, inplace=True)
@@ -268,13 +267,14 @@ def exec_classify(args):
         df_out.to_csv(args.tag+'.RandomForestClassifier.csv', sep=',')
         
         # Feature importance output
-        df_fi.to_csv(args.tag+'.RF_fi.csv', sep=',')
-        dfi_items = ['\t'.join(['feature','sum','mean'])+'\n']
-        for item in df_fi.columns:
-            #dfi_items.append( str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
-            dfi_items.append( item + '\t' + str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
+        if args.featureImportance:
+            df_fi.to_csv(args.tag+'.RF_featureImportance.csv', sep=',')
+            dfi_items = ['\t'.join(['feature','sum','mean'])+'\n']
+            for item in df_fi.columns:
+                #dfi_items.append( str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
+                dfi_items.append( item + '\t' + str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
     
-        open(args.tag+'_fi_out.txt', 'w').write(''.join(dfi_items))
+            open(args.tag+'_featureImportance_out.txt', 'w').write(''.join(dfi_items))
  
  
 def exec_classify_help(parser):
@@ -293,6 +293,7 @@ def exec_classify_help(parser):
     parser.add_argument('--fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
     parser.add_argument('--suf', action='store', dest='suf_inp', type=bool, default=True, help='Shuffle true ot false')
     parser.add_argument('--ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
+    parser.add_argument('--featureImportance', action='store_true', default=False, help='Compute feature importances') 
     parser.add_argument('--ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
     parser.add_argument('--logfile', action='store', dest='logfile',
         default='classify.log', help='log file')
