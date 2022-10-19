@@ -12,6 +12,7 @@ from MEClass3.overlap_genes_enhancers import exec_overlap_genes_enhancers, exec_
 from MEClass3.classify import exec_classify, exec_classify_help
 from MEClass3.evaluation import exec_eval, exec_eval_help
 from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
+from MEClass3.cluster import exec_cluster, exec_cluster_help
 #from MEClass3.filter import exec_filter, exec_filter_help
 #from MEClass3.setup_expr import exec_setup_expr, exec_setup_expr_help
 #from MEClass3.merge_features import exec_merge_features, exec_merge_features_help
@@ -63,6 +64,12 @@ def setup_subcommands():
                                 help_function=exec_eval_help,
                                 help = "Evaluate classifier performance",
                                 desc = "Evaluate classifier performance."))
+    
+    subcommands.append( Subcommand( name="cluster", 
+                                function=exec_cluster,
+                                help_function=exec_cluster_help,
+                                help = "Cluster methylationi signatures",
+                                desc = "Cluster methylation signatures."))
 
 #    subcommands.append( Subcommand( name="merge_features", 
 #                                function=exec_merge_features,
