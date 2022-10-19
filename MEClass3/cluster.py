@@ -33,7 +33,7 @@ def exec_cluster(args):
         pred_data = read_pred_file(args.pred_file)
         pred_data_filtered = pred_data[ \
             ((args.lowerPredBound <= pred_data['prob_up']) & (pred_data['prob_up'] <= args.upperPredBound)) | \
-            ((args.lowerPredBound <= pred_data['prob_dw']) & (pred_data['prob_dw'] <= args.upperPredBound)) ]
+            ((args.lowerPredBound <= pred_data['prob_dn']) & (pred_data['prob_dn'] <= args.upperPredBound)) ]
         interp_data = ''
         found_data_flag = False
         for sample in pred_data_filtered['sample_name'].unique():

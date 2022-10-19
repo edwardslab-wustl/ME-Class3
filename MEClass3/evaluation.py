@@ -36,12 +36,12 @@ def exec_eval(args):
         TP_N = 0
         numGenes_P = 0
         numGenes_N = 0
-        df_tmp = df[ (df['prob_up'] >= 1-threshold) | (df['prob_dw'] >= 1-threshold) ]
+        df_tmp = df[ (df['prob_up'] >= 1-threshold) | (df['prob_dn'] >= 1-threshold) ]
         df_tmp_P = df_tmp[ (df_tmp['prob_up'] >= 1-threshold) ]
         numGenes_P = df_tmp_P['gene_id-sample_name'].count()
         df_tmp_P = df_tmp_P[ (df_tmp_P['expr_flag'] == 1) & (df_tmp_P['expr_pred'] == 1) ]
         TP_P = df_tmp_P['gene_id-sample_name'].count()
-        df_tmp_N = df_tmp[ (df_tmp['prob_dw'] >= 1-threshold) ]
+        df_tmp_N = df_tmp[ (df_tmp['prob_dn'] >= 1-threshold) ]
         numGenes_N = df_tmp_N['gene_id-sample_name'].count()
         df_tmp_N = df_tmp_N[ ( df_tmp_N['expr_flag'] == -1 ) & (df_tmp_N['expr_pred'] == -1) ]
         TP_N = df_tmp_N['gene_id-sample_name'].count()

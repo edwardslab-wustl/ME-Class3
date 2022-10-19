@@ -92,7 +92,7 @@ def print_individual_cluster_averages(uniq_clusters,fcluster,df,args):
             average_print_helper_meth_cpg(cluster_data,str(cluster),purity,expression_direction,args)
             outFile = (args.out_base+".meth_cpg.cluster_%s"%(cluster)+".csv")
             keep_cols= ['gene_id-sample_name','gene_id','sample_name',
-                        'expr_value','expr_flag','prob_dw','prob_up','expr_pred']
+                        'expr_value','expr_flag','prob_dn','prob_up','expr_pred']
             cluster_data[keep_cols].to_csv(outFile, index=False)
     return cluster_info
 

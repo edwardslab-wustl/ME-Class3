@@ -50,7 +50,7 @@ def exec_classify(args):
     # List of sample names
     #sample_names =  list( set( df['sample_name'].tolist() ) )
     #Output info. This will store classifier performance
-    df['prob_dw'] = 0.0
+    df['prob_dn'] = 0.0
     df['prob_up'] = 0.0
     df['expr_pred'] = np.nan
     # Add train and test flag for classifier to use and mark all null
@@ -102,7 +102,7 @@ def exec_classify(args):
                     #df.at[idx, 'prob_dw'] = y_test_prob[i][0]
                     #df.at[idx, 'prob_up'] = y_test_prob[i][1]
                     df.loc[idx, 'expr_pred'] = y_test_pred[i]
-                    df.loc[idx, 'prob_dw'] = y_test_prob[i][0]
+                    df.loc[idx, 'prob_dn'] = y_test_prob[i][0]
                     df.loc[idx, 'prob_up'] = y_test_prob[i][1]
                 # Feature importance
                 df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=feature_column_names))] )
@@ -236,7 +236,7 @@ def exec_classify(args):
                             #df.at[idx, 'prob_dw'] = y_test_prob[i][0]
                             #df.at[idx, 'prob_up'] = y_test_prob[i][1]
                             df.loc[idx, 'expr_pred'] = y_test_pred[i]
-                            df.loc[idx, 'prob_dw'] = y_test_prob[i][0]
+                            df.loc[idx, 'prob_dn'] = y_test_prob[i][0]
                             df.loc[idx, 'prob_up'] = y_test_prob[i][1]
 
                             # df.set_value(idx, 'expr_pred', y_test_pred[i]) 
