@@ -1,13 +1,12 @@
-from re import T
 import sys
 
+import sklearn.preprocessing 
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
-from sklearn.preprocessing import normalize
 
 class recursion_depth:
 # from : https://www.codingem.com/python-maximum-recursion-depth/
@@ -29,8 +28,7 @@ def normalize_expression(E):
 
 def subset_and_normalize_data( df, columns):
     result = df.loc[:,columns]
-    #result = sklearn.preprocessing.normalize(result)
-    result = normalize(result)
+    result = sklearn.preprocessing.normalize(result)
     return result
 
 def check_purity(Y):
@@ -98,7 +96,6 @@ def print_individual_cluster_averages(uniq_clusters,fcluster,df,args):
             cluster_data[keep_cols].to_csv(outFile, index=False)
     return cluster_info
 
-
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args):
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
@@ -132,7 +129,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args)
     plt.savefig(args.out_base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_inches='tight')
     #plt.savefig(args.out_base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close()
-    
     return
 
 def replace_axis_labels(df, column):
@@ -144,105 +140,3 @@ def replace_axis_labels(df, column):
         x_val = (i * bin_size) - x_shift
         new_df.loc[new_df[column] == x, column] = x_val
     return new_df
- 
-        
- ###########
- ### OLD ###
- ###########
- 
-def average_print_helper_meth_cpg_old(Xs,Cs,cluster,base,labels,purity,expression_direction,data_info,args):
-    df = list()    
-    sns.set(font_scale=1.8)
-    sns.set_style("ticks")
-
-    plt.figure(figsize=(8,5)) 
-    for i,x in enumerate(Xs):      
-        for j,y in enumerate(x):        
-            if args.cluster_data == 'meth_only':
-                df.append([j,i,y,r'$\Delta$mCG/CG'])
-            elif args.cluster_data == '5hmC_only':
-                df.append([j,i,Cs[i][j],r'$\Delta$hmCG/CG'])
-            else:
-                df.append([j,i,y,r'$\Delta$mCG/CG'])
-                df.append([j,i,Cs[i][j],r'$\Delta$hmCG/CG'])
-                df.append([j,i,y+Cs[i][j],r'$\Delta$mCG/CG+$\Delta$hmCG/CG'])
-    df = pd.DataFrame(df)
-    ci = args.confidence_interval
-    #tsplot was replaced by lineplot in seaborn 0.9
-    if "tsplot" in dir(sns):
-        df.columns = [0,1,2,"signal"]
-        ax = sns.tsplot(df,time=0,unit=1,value=2,condition="signal",ci=ci)
-    else:
-        df.columns = ["loc","dummy","meth","signal"]
-        ax = sns.lineplot(data=df,x='loc',y='meth',hue="signal",ci=ci)
-
-    max_x_val = Xs.shape[1]
-    max_y_val = args.max_y_value
-    (tssWin, tssBins, tssOffset) = data_info
-    tss_ratio = float(tssWin) / (float(tssWin / 2.) + float(tssOffset))
-    md_pt = int(float(max_x_val)/tss_ratio)
-    true_md_pt = int(md_pt * float(tssWin) / float(tssBins))
-    min_label =  true_md_pt - tssWin
-    max_label = tssWin - true_md_pt
-
-    plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
-    plt.plot([0,max_x_val],[0,0],'k--',alpha=0.5)    
-    #print(max_x_val,max_y_val,min_label,max_label,md_pt,true_md_pt)
-
-    plt.xlim([0,max_x_val])
-    #plt.xticks((0,md_pt,max_x_val),('-5kb','TSS','+5kb'))
-    plt.xticks((0,md_pt,max_x_val),(min_label,'TSS',max_label))
-    plt.ylim([-max_y_val,max_y_val])
-    plt.yticks(np.arange(-max_y_val, max_y_val*1.05, step=0.2))
-    #ax.minorticks_on()
-    #x_tick_minorLocator = MultipleLocator(1000)
-    #ax.xaxis.set_minor_locator(x_tick_minorLocator)
-
-    plt.title("Cluster: %s (n=%d, %s, purity=%5.2f)" % (cluster,len(Xs),expression_direction,purity))
-    #ax.legend_.remove()
-    lgd=plt.legend(loc=5,bbox_to_anchor=(1.7,0.5),handlelength=1,handletextpad=0.5)
-    plt.xlabel("Position relative to TSS (bp)")
-    if args.cluster_data == 'meth_only':
-        plt.ylabel(r'$\Delta$mCG/CG')
-    elif args.cluster_data == 'hmC_only':
-        plt.ylabel(r'$\Delta$hmCG/CG')
-    else:
-        plt.ylabel(r'$\Delta$mCG/CG'+'\n'+r'$\Delta$hmCG/CG')
-
-    sys.stderr.write("\tPlotting Aggregate 5mC/5hmC Cluster %s\n" % (cluster))
-    if args.tight_layout:
-        plt.tight_layout()
-    plt.savefig(base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_extra_artists=(lgd,), bbox_inches='tight')
-    plt.close()
-
-    outFile = (base+".meth_cpg.cluster_%s"%(cluster)+".txt")
-    outFile_fh = open(outFile, 'w')
-    header = "GeneID\tExpr\tPred\n"
-    outFile_fh.write(header)
-    gene_output_text = "\n".join(labels)
-    outFile_fh.write(gene_output_text)
-    outFile_fh.close()
-
-    return 0
-
-def print_individual_cluster_averages_meth_hmC_old(uniq_clusters,fcluster,X,Y,C,Z,of_base,labels,data_info,args):    
-    for cluster in uniq_clusters:
-        idx = list()        
-        for i,fc in enumerate(fcluster):
-            if cluster == fc:
-                idx.append(i)
-        Xs = [x for i,x in enumerate(X) if i in idx]
-        Ys = [y for i,y in enumerate(Y) if i in idx]
-        Cs = [c for i,c in enumerate(C) if i in idx]
-        Xs = np.asarray(Xs)
-        Ys = np.asarray(Ys)
-        Cs = np.asarray(Cs)
-        purity,expression_direction = check_purity(Ys)
-        sys.stderr.write("cluster: " + str(cluster) + 
-                "; Expr. Dir: " + expression_direction +
-                "; purity: " + str(purity) +
-                "; num_genes: " + str(len(Ys)) + "\n")
-        if len(Xs) >= args.min_genes_per_cluster and purity >= args.min_cluster_purity:
-            cluster_labels = [l for i,l in enumerate(labels) if i in idx]
-            average_print_helper_meth_cpg(Xs,Cs,str(cluster),of_base,cluster_labels,purity,expression_direction,data_info,args)
-    return 
