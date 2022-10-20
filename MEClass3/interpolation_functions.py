@@ -41,7 +41,15 @@ def add_fail (status, gene, dict):
         dict[status] = [ gene ]
     return dict
 
-def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
+def format_fail_dict (fail_dict, fail_text):
+    result = ''
+    for status in fail_dict:
+       num_fail = len(fail_dict[status])
+       result += str(num_fail) + " " + fail_text + " failed to pass " + status + " filter.\n"
+       result += ",".join(fail_dict[status]) + "\n\n"
+    return result
+
+def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, args):
     final_results = []
     #fail_dict = defaultdict(list)
     for item in item_list:
@@ -58,7 +66,7 @@ def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
             fail_dict = add_fail(status, result, fail_dict)
     return "\n".join(final_results), fail_dict
     
-def interp_list_mp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
+def interp_list_mp(item_list, dict_bed, sample_id, fail_dict, args):
     arg_iterable = zip(item_list, repeat(dict_bed), repeat(sample_id), repeat(args))
     with mp.Pool(processes=args.num_proc) as pool:
         if args.anno_type == 'tss':

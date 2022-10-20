@@ -9,6 +9,7 @@ from MEClass3.interpolation_functions import add_fail
 from MEClass3.interpolation_functions import interp_list_sp
 from MEClass3.interpolation_functions import interp_list_mp
 from MEClass3.interpolation_functions import generate_param_list
+from MEClass3.interpolation_functions import format_fail_dict
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import read_anno_file 
 from MEClass3.io_functions import eprint 
@@ -16,13 +17,6 @@ from MEClass3.io_functions import read_bed_file
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.sample import read_sample_file
 
-def format_fail_dict (fail_dict, fail_text):
-    result = ''
-    for status in fail_dict:
-       num_fail = len(fail_dict[status])
-       result += str(num_fail) + " " + fail_text + " failed to pass " + status + " filter.\n"
-       result += ",".join(fail_dict[status]) + "\n\n"
-    return result
 
 def exec_interp(args):
     anno_file = args.anno_file
@@ -55,37 +49,24 @@ def exec_interp(args):
                     anno_list_postfilter.append(gene)
             out_file_suffix = '_gene_interp'
             fail_text = 'genes'
-            #step_size = int(2 * args.ibin_inp / args.num_interp_points )
-            #pos = -args.ibin_inp + int(step_size/2)
-            #for pnt in range(args.num_interp_points):
-            #    tmp = "-".join([args.data_type,'tss',str(pnt)])
-            #    param_data.append(tmp + ',' + str(pos))
-            #    pos += step_size
             param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
         elif anno_type == 'enh':
             anno_list_postfilter = anno_list_prefilter
             out_file_suffix = '_enh_interp'
             fail_text = 'enhancers'
-            #step_size = int(2 * args.refl_inp / args.num_interp_points )
-            #pos = -args.refl_inp + int(step_size/2)
-            #for pnt in range(args.num_interp_points):
-            #    tmp = "-".join([args.data_type,'enh',str(pnt)])
-            #    param_data.append(tmp + ',' + str(pos))
-            #    pos += step_size
             param_data = generate_param_list(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
         else:
             eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
-            # eprint("Can't recognize anno_type. Check --anno_type specification in help.")
             exit()
         print_to_log(log_FH, format_fail_dict(anno_fail_dict, fail_text) + '\n\n')
         for sample_pair in pair_list:
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
-            print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
             out_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".csv"
             param_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".param"
-            print_to_log(log_FH, "outfile: " + out_file + "\n")
-            print_to_log(log_FH, "param file: " + param_file + "\n")
+            print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
+            print_to_log(log_FH, "out_file: " + out_file + "\n")
+            print_to_log(log_FH, "param_file: " + param_file + "\n")
             dict_bed = {}
             bed_file_lines = read_bed_file(sample_file)
             chr_track = 'chr00'
@@ -101,9 +82,9 @@ def exec_interp(args):
             gene_fail_dict = defaultdict(list)
             interp_start_time = time.perf_counter()
             if args.num_proc == 0:
-                out_data, gene_fail_dict = interp_list_sp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, log_FH, args)
+                out_data, gene_fail_dict = interp_list_sp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, args)
             else:
-                out_data, gene_fail_dict = interp_list_mp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, log_FH, args)
+                out_data, gene_fail_dict = interp_list_mp(anno_list_postfilter, dict_bed, sample_id, gene_fail_dict, args)
             interp_end_time = time.perf_counter()
             print_to_log(log_FH, f"Interpolation time: {interp_end_time - interp_start_time:0.4f} seconds\n\n")
             print_to_log(log_FH, format_fail_dict(gene_fail_dict, fail_text))
