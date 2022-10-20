@@ -28,12 +28,12 @@ def print_to_log(FH, *args, **kwargs):
     FH.flush()
     
 def read_anno_file(anno_file, anno_type):
-    if anno_type == 'gene_tss':
+    if anno_type == 'tss':
         feature_list = read_gene_file(anno_file)
     elif anno_type == 'enh':
         feature_list = read_region_file(anno_file)
     else:
-        eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+        eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
         exit()
     return feature_list
 

@@ -8,6 +8,7 @@ from MEClass3.interpolation_functions import generate_out_header
 from MEClass3.interpolation_functions import add_fail
 from MEClass3.interpolation_functions import interp_list_sp
 from MEClass3.interpolation_functions import interp_list_mp
+from MEClass3.interpolation_functions import generate_param_list
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import read_anno_file 
 from MEClass3.io_functions import eprint 
@@ -26,7 +27,7 @@ def format_fail_dict (fail_dict, fail_text):
 def exec_interp(args):
     anno_file = args.anno_file
     anno_type = args.anno_type
-    out_header = generate_out_header(args.num_interp_points, anno_type)
+    out_header = generate_out_header(args.num_interp_points, anno_type, args.data_type)
     pair_list = read_sample_file(args.input_list)
     if args.sample:
         sample_set_flag = False
@@ -44,7 +45,7 @@ def exec_interp(args):
         fail_text = 'regions'
         print_to_log(log_FH, '\nSetting up Annotation Information\n')
         anno_fail_dict = defaultdict(list)
-        if anno_type == 'gene_tss':
+        if anno_type == 'tss':
             for gene in anno_list_prefilter:
                 if gene.gene_length() < args.min_gene_length:
                     anno_fail_dict = add_fail( 'gene_length', gene.id, anno_fail_dict)
@@ -52,22 +53,39 @@ def exec_interp(args):
                     anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
                 else:
                     anno_list_postfilter.append(gene)
-            out_file_suffix = '_gene_interp.csv'
+            out_file_suffix = '_gene_interp'
             fail_text = 'genes'
+            #step_size = int(2 * args.ibin_inp / args.num_interp_points )
+            #pos = -args.ibin_inp + int(step_size/2)
+            #for pnt in range(args.num_interp_points):
+            #    tmp = "-".join([args.data_type,'tss',str(pnt)])
+            #    param_data.append(tmp + ',' + str(pos))
+            #    pos += step_size
+            param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
         elif anno_type == 'enh':
             anno_list_postfilter = anno_list_prefilter
-            out_file_suffix = '_enh_interp.csv'
+            out_file_suffix = '_enh_interp'
             fail_text = 'enhancers'
+            #step_size = int(2 * args.refl_inp / args.num_interp_points )
+            #pos = -args.refl_inp + int(step_size/2)
+            #for pnt in range(args.num_interp_points):
+            #    tmp = "-".join([args.data_type,'enh',str(pnt)])
+            #    param_data.append(tmp + ',' + str(pos))
+            #    pos += step_size
+            param_data = generate_param_list(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
         else:
-            eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+            eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
+            # eprint("Can't recognize anno_type. Check --anno_type specification in help.")
             exit()
         print_to_log(log_FH, format_fail_dict(anno_fail_dict, fail_text) + '\n\n')
         for sample_pair in pair_list:
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
             print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
-            out_file = args.output_path + "/" + sample_pair.name + out_file_suffix
+            out_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".csv"
+            param_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".param"
             print_to_log(log_FH, "outfile: " + out_file + "\n")
+            print_to_log(log_FH, "param file: " + param_file + "\n")
             dict_bed = {}
             bed_file_lines = read_bed_file(sample_file)
             chr_track = 'chr00'
@@ -92,6 +110,8 @@ def exec_interp(args):
             with open(out_file, 'w') as out_FH:
                 out_FH.write(out_header)
                 out_FH.write(out_data)
+            with open(param_file, 'w') as out_FH:
+                out_FH.write("\n".join(param_data))
             dict_bed.clear()
             del dict_bed
 
@@ -102,9 +122,12 @@ def exec_interp_help(parser):
     parser_required.add_argument('-t', dest='tag_inp', default=argparse.SUPPRESS, required=True, help='Tag for output')
     parser_required.add_argument('-i', '--input_list', default=argparse.SUPPRESS, required=True, help='List of sample pairs')
     parser_general = parser.add_argument_group('general arguments')
-    parser_general.add_argument('--anno_type', default="gene_tss", 
-                                 choices=["gene_tss", "enh"],
+    parser_general.add_argument('--anno_type', default="tss", 
+                                 choices=["tss", "enh"],
                                  help='region or gene annotation file')
+    parser_general.add_argument('--data_type', default="mC", 
+                                 choices=["mC", "hmC", "other"],
+                                 help='type of data')
     parser_general.add_argument('--sample', default=None, help='Use to select specific sample from pair list and only run that one.')
     parser_general.add_argument('--num_proc', type=int, default=0, help='number of processes to run')
     parser_general.add_argument('-o', '--output_path', action='store', dest='output_path',

@@ -6,21 +6,32 @@ from MEClass3.Interpolation_class import Interpolation
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint 
 
-def generate_out_header(num_pts, anno_type):
+def generate_out_header(num_pts, anno_type, data_type):
     header = ''
-    if anno_type == 'gene_tss':
+    if anno_type == 'tss':
         header = 'gene_id-sample_name'
-        for pos in range(num_pts):
-            header = header + (',ftss_'+str(pos))
+        #for pos in range(num_pts):
+        #    header +=  ',' + "-".join([data_type,'tss',str(pos)])
     elif anno_type == 'enh':
         header = 'enh_loc-gene_id-sample_name'
-        for pos in range(num_pts):
-            #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
-            header = header + (',fre_'+str(pos)) 
     else:
-        eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+        eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
         exit()
+    for pos in range(num_pts):
+            #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
+            #header = header + (',fre_'+str(pos)) 
+        header +=  ',' + "-".join([data_type,anno_type,str(pos)])
     return header + "\n"
+
+def generate_param_list(num_pts, start_pt, data_type, anno_type):
+    param_data = []
+    step_size = int(2 * start_pt / num_pts )
+    pos = -start_pt + int(step_size/2)
+    for pnt in range(num_pts):
+        tmp = "-".join([data_type,anno_type,str(pnt)])
+        param_data.append(tmp + ',' + str(pos))
+        pos += step_size
+    return param_data
 
 def add_fail (status, gene, dict):
     if status in dict:
@@ -33,12 +44,12 @@ def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
     final_results = []
     #fail_dict = defaultdict(list)
     for item in item_list:
-        if args.anno_type == 'gene_tss':
+        if args.anno_type == 'tss':
             (status, result) = interp_gene(item, dict_bed, sample_id, args)
         elif args.anno_type == 'enh':
             (status, result) = interp_region(item, dict_bed, sample_id, args)
         else:
-            eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+            eprint("Can't recognize anno_type: " + args.anno_type + "\nCheck --anno_type specification in help.")
             exit()
         if status == 'pass':
             final_results.append(result)
@@ -49,12 +60,12 @@ def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
 def interp_list_mp(item_list, dict_bed, sample_id, fail_dict, log_FH, args):
     arg_iterable = zip(item_list, repeat(dict_bed), repeat(sample_id), repeat(args))
     with mp.Pool(processes=args.num_proc) as pool:
-        if args.anno_type == 'gene_tss':
+        if args.anno_type == 'tss':
             results = pool.starmap(interp_gene, arg_iterable)
         elif args.anno_type == 'enh':
             results = pool.starmap(interp_region, arg_iterable)
         else:
-            eprint("Can't recognize anno_type. Check --anno_type specification in help.")
+            eprint("Can't recognize anno_type: " + args.anno_type + "\nCheck --anno_type specification in help.")
             exit()
         #res = pool.starmap_async(interp_gene, arg_iterable)
         #results = res.get()
