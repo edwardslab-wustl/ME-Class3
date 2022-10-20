@@ -13,6 +13,7 @@ from MEClass3.classify import exec_classify, exec_classify_help
 from MEClass3.evaluation import exec_eval, exec_eval_help
 from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
 from MEClass3.cluster import exec_cluster, exec_cluster_help
+from MEClass3.plot_interp import exec_plot_interp, exec_plot_interp_help
 #from MEClass3.filter import exec_filter, exec_filter_help
 #from MEClass3.setup_expr import exec_setup_expr, exec_setup_expr_help
 #from MEClass3.merge_features import exec_merge_features, exec_merge_features_help
@@ -70,6 +71,12 @@ def setup_subcommands():
                                 help_function=exec_cluster_help,
                                 help = "Cluster methylationi signatures",
                                 desc = "Cluster methylation signatures."))
+    
+    subcommands.append( Subcommand( name="plot_interp", 
+                                function=exec_plot_interp,
+                                help_function=exec_plot_interp_help,
+                                help = "Plot methylationi signatures",
+                                desc = "Plot methylation signatures."))
 
 #    subcommands.append( Subcommand( name="merge_features", 
 #                                function=exec_merge_features,

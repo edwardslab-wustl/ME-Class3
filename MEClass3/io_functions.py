@@ -37,6 +37,15 @@ def read_anno_file(anno_file, anno_type):
         exit()
     return feature_list
 
+def read_param_file_list(file):
+    result = list()
+    with open(file, 'r') as FH:
+        for line in FH:
+            (key, pos) = line.strip().split(',')
+            result.append(int(pos))
+    return result
+
+
 @dataclass(frozen=True)
 class GeneAnno:
     id: str
