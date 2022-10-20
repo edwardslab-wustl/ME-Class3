@@ -145,7 +145,7 @@ def exec_plot_interp_help(parser):
         default='interp_plots', help='Path to Output')
     parser_general.add_argument('--logfile', dest='logfile', default='plot_interp.log', help='log file')
     parser_plot = parser.add_argument_group('plotting arguments')
-    parser_plot.add_argument('--max_y_val', default=0.8, type=float,
+    parser_plot.add_argument('--max_y_val', default=1.0, type=float,
         help='Set y-axis limits as [-max_y_val, max_y_val].')
     parser_plot.add_argument('--raw_data_color', default='red', type=str,
         help='Marker color for raw data.')
