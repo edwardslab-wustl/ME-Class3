@@ -41,10 +41,37 @@ def read_param_file_list(file):
     result = list()
     with open(file, 'r') as FH:
         for line in FH:
-            (key, pos) = line.strip().split(',')
-            result.append(int(pos))
-    return result
+            if line.startswith('#'):
+                (anno_type,region_size,num_pts) = line.lstrip('#').strip().split(',')
+                param = Param(anno_type, int(region_size), int(num_pts))
+            else:
+                (key, pos) = line.strip().split(',')
+                result.append(int(pos))
+    return result, param
 
+def index_raw_data (file, size):
+    index = defaultdict(list)
+    data = defaultdict(dict)
+    idx_size = size * 4 
+    with open(file, 'r') as FH:
+        for line in FH:
+            if not line.startswith('#'):
+                (chrom, pos1, pos2, val) = line.strip().split()
+                pos1 = int(pos1)
+                idx = int(pos1 / idx_size)
+                data[chrom][pos1] = float(val)
+                if (chrom, idx) in index:
+                    index[(chrom,idx)].append(pos1)
+                else:
+                    index[(chrom,idx)] = [pos1]
+    return data, index, idx_size
+                
+
+@dataclass(frozen=True)
+class Param:
+    anno_type: str
+    region_size: int
+    num_pts: str
 
 @dataclass(frozen=True)
 class GeneAnno:

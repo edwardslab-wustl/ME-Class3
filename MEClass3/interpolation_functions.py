@@ -23,10 +23,11 @@ def generate_out_header(num_pts, anno_type, data_type):
         header +=  ',' + "-".join([data_type,anno_type,str(pos)])
     return header + "\n"
 
-def generate_param_list(num_pts, start_pt, data_type, anno_type):
+def generate_param_list(num_pts, region_size, data_type, anno_type):
     param_data = []
-    step_size = int(2 * start_pt / num_pts )
-    pos = -start_pt + int(step_size/2)
+    param_data.append('#' + ",".join([anno_type,str(region_size),str(num_pts)]))
+    step_size = int(2 * region_size / num_pts )
+    pos = -region_size + int(step_size/2)
     for pnt in range(num_pts):
         tmp = "-".join([data_type,anno_type,str(pnt)])
         param_data.append(tmp + ',' + str(pos))
