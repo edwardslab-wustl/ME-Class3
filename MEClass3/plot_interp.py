@@ -3,16 +3,16 @@ import argparse
 import os.path
 
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator
 
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import eprint
 from MEClass3.io_functions import read_param_file_list
-from MEClass3.io_functions import read_gene_file
 from MEClass3.io_functions import index_raw_data
+from MEClass3.plot_interp_functions import grab_region_data
+from MEClass3.plot_interp_functions import extract_raw_data
+from MEClass3.plot_interp_functions import plot_interp
 
 def exec_plot_interp(args):
     with open(args.logfile, 'w') as log_FH:
@@ -30,96 +30,42 @@ def exec_plot_interp(args):
         else:
             data = pd.read_csv(args.interp_file)
         feat_cols = [ x for x in data if x.startswith(args.data_type) ]
-        eprint("reading in raw data")
+        #eprint("reading in raw data")
         if args.raw_data:
             raw_data_dict, raw_data_index, raw_data_index_size = index_raw_data(args.raw_data, param.region_size)
             region_dict = grab_region_data(args.anno_file, args.anno_type)
-        eprint("looping genes")
+        #eprint("looping interp lines")
         for idx in data.index:
             raw_x_data = []
             raw_y_data = []
             y_data = list(data.loc[idx, feat_cols])
             id = data.iloc[idx,0]
-            (gene_id, sample_id) = id.split('-')
-            eprint(f"  on gene {gene_id}")
-            file_tag = '.'.join([gene_id, sample_id, args.tag, args.anno_type,args.data_type])
-            out_file = args.output_path + "/" + file_tag + '.png'
+            if args.anno_type == 'tss':
+                (gene_id, sample_id) = id.split('-')
+                #eprint(f"  on gene {gene_id}")
+                file_tag = '.'.join([gene_id, sample_id, args.tag, args.anno_type, args.data_type])
+                anno_info = ",".join([sample_id,gene_id])
+                feat_id = gene_id
+            elif args.anno_type == 'enh':
+                (enh_info, gene_id, sample_id) = id.split('-')
+                #eprint(f"  processing {enh_info} {gene_id}")
+                file_tag = '.'.join([gene_id, sample_id, enh_info, args.tag, args.anno_type, args.data_type])
+                anno_info = ",".join([sample_id,gene_id,enh_info])
+                feat_id = enh_info + '-' + gene_id
             if args.raw_data:
-                if gene_id in region_dict:
-                    (region_chr, region_ref_pt, region_strand) = region_dict[gene_id]
+                if feat_id in region_dict:
+                    (region_chr, region_start_ref_pt, region_end_ref_pt, region_strand) = region_dict[feat_id]
                     if region_chr in raw_data_dict:
-                        raw_x_data, raw_y_data = extract_raw_data(gene_id, region_ref_pt, region_chr, region_strand,
-                                                                  raw_data_dict[region_chr], raw_data_index, raw_data_index_size, param, args)
+                        raw_x_data, raw_y_data = extract_raw_data(region_start_ref_pt, region_end_ref_pt, region_chr, region_strand,
+                                                                raw_data_dict[region_chr], raw_data_index, raw_data_index_size, param, args)
                     else:
-                        print_to_log(log_FH, f"Skipping raw data for {gene_id}. Can't find chrom in raw_data, chrom: {region_chr}\n")
+                        print_to_log(log_FH, f"Skipping raw data for {feat_id}. Can't find chrom in raw_data, chrom: {region_chr}\n")
                 else:
-                    print_to_log(log_FH, f"Skipping raw data for {gene_id}. Can't find gene in anno_data.\n")
+                    print_to_log(log_FH, f"Skipping raw data for {feat_id}. Can't find feat in anno_data.\n")
                 if len(raw_x_data) == 0:
-                    print_to_log(log_FH, f"Skipping raw data for {gene_id}. Can't find any raw_data.\n")
-            plot_interp(x_data, y_data, raw_x_data, raw_y_data, gene_id,args.data_type, args.anno_type, out_file, args)
-
-def extract_raw_data( id, ref_pt, chrom, strand, raw_data_dict_chr, raw_data_index, raw_data_index_size, param, args):
-    raw_x_data = []
-    raw_y_data = []
-    start_pos = ref_pt - param.region_size - 100 #pull a bit extra to avoid boundary issues
-    end_pos = ref_pt + param.region_size + 100 #pull a bit extra to avoid boundary issues
-    if start_pos < 0:
-        start_pos = 0
-    start_idx = int(start_pos / raw_data_index_size) - 1
-    end_idx = int(end_pos / raw_data_index_size) + 1
-    for idx in range(start_idx, end_idx + 1):
-        for pos in raw_data_index[(chrom, idx)]:
-            if start_pos <= pos and pos <= end_pos:
-                if strand == '+':
-                    raw_x_data.append(pos - ref_pt)
-                else:
-                    raw_x_data.append(-pos + ref_pt)
-                raw_y_data.append(raw_data_dict_chr[pos])
-    return raw_x_data, raw_y_data
-
-def grab_region_data(anno_file, type):
-    region_dict = dict()
-    if anno_file and os.path.exists(anno_file):
-        if type == 'tss':
-            region_list = read_gene_file(anno_file)
-        else:
-            eprint(f"Can't recognize anno_type: {type}\n")
-            exit()
-    elif anno_file:
-        eprint("Must specify anno_file param for feature annotation to add raw data.\n")
-        exit()
-    else:
-        eprint(f"Can't find anno_file: {anno_file}\n")
-        exit()
-    for region in region_list:
-        region_dict[region.id] = (region.chr, region.tss(), region.strand)
-    return region_dict
-
-def plot_interp(x, y, raw_x_data, raw_y_data, gene, data_type, anno_type, out_file, args):
-    fig, ax = plt.subplots( nrows=1, ncols=1 )
-    ax.plot([0,0],[-1,1], linestyle='dashed', color='black')
-    ax.plot([-5000,5000],[0,0], color='black')
-    ax.plot(x,y, color=args.interp_data_color)
-    if len(raw_x_data) > 0:
-        ax.plot(raw_x_data, raw_y_data,
-                marker="o",
-                markersize=2,
-                linestyle='None',
-                color=args.raw_data_color)
-    plt.title(gene, loc='left')
-    ax.set_ylabel(r'$\Delta$' + data_type)
-    if anno_type == 'tss':
-        ax.set_xlabel("Distance to TSS (bp)")
-    else:
-        ax.set_xlabel("Position (bp)")
-    plt.ylim(-args.max_y_val,args.max_y_val)
-    plt.xlim([-5000,5000])
-    plt.xticks((-5000,0,5000),('-5kb','TSS','+5kb'))
-    x_tick_minorLocator = MultipleLocator(1000)
-    ax.xaxis.set_minor_locator(x_tick_minorLocator)
-    plt.savefig(out_file, bbox_inches='tight')
-    plt.close()
-    return
+                    print_to_log(log_FH, f"Skipping raw data for {feat_id} {gene_id}. Can't find any raw_data.\n")
+            out_file = args.output_path + "/" + file_tag + '.png'
+            plot_interp(x_data, y_data, raw_x_data, raw_y_data, anno_info, args.data_type, args.anno_type, out_file, param, args)
 
 def exec_plot_interp_help(parser):
     parser_required = parser.add_argument_group('required arguments')

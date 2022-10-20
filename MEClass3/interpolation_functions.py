@@ -10,16 +10,12 @@ def generate_out_header(num_pts, anno_type, data_type):
     header = ''
     if anno_type == 'tss':
         header = 'gene_id-sample_name'
-        #for pos in range(num_pts):
-        #    header +=  ',' + "-".join([data_type,'tss',str(pos)])
     elif anno_type == 'enh':
         header = 'enh_loc-gene_id-sample_name'
     else:
         eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
         exit()
     for pos in range(num_pts):
-            #header = header + (',f'+''.join(file_id.split('_'))+'_'+str(pos)) 
-            #header = header + (',fre_'+str(pos)) 
         header +=  ',' + "-".join([data_type,anno_type,str(pos)])
     return header + "\n"
 
@@ -27,7 +23,10 @@ def generate_param_list(num_pts, region_size, data_type, anno_type):
     param_data = []
     param_data.append('#' + ",".join([anno_type,str(region_size),str(num_pts)]))
     step_size = int(2 * region_size / num_pts )
-    pos = -region_size + int(step_size/2)
+    if anno_type == 'tss':
+        pos = -region_size + int(step_size/2)
+    else:
+        pos = -region_size + int(step_size/2) # THERE SEEMS TO BE AN OFFSET ISSUE HERE FOR ENHANCERS!
     for pnt in range(num_pts):
         tmp = "-".join([data_type,anno_type,str(pnt)])
         param_data.append(tmp + ',' + str(pos))
@@ -51,7 +50,6 @@ def format_fail_dict (fail_dict, fail_text):
 
 def interp_list_sp(item_list, dict_bed, sample_id, fail_dict, args):
     final_results = []
-    #fail_dict = defaultdict(list)
     for item in item_list:
         if args.anno_type == 'tss':
             (status, result) = interp_gene(item, dict_bed, sample_id, args)
@@ -126,19 +124,13 @@ def interp_gene(gene, dict_bed, sample_id, args):
             result = ("flankNorm", gene.id)
     if not filter_flag:
         # Gather interpolated data
-        #eprint(gene.id)
         interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
         # cross-check number of interpolated features
         if len(interpolated_dmet_data) != args.num_interp_points:
-            #eprint('Inconsistent number of interpolation features: ' + gene.id)
             result = ('interpolation inconsistency in number of features', gene.id)
-            #exit() # Exit if number is inconsistent 
-        # Write data
         else:
             result = ('pass', gene.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data) )
     del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
-    #eprint(result)
-    #print_to_log(log_FH, result + "\n")
     return result
 
 def interp_region(region, dict_bed, sample_id, args):
@@ -146,9 +138,9 @@ def interp_region(region, dict_bed, sample_id, args):
     reg_type = 're'
     interp_bin = 500 # for model gene plots
     dict_cpg = dict_bed[region.chr]
-    # Regulatory Elements
     cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
     # ----------------------------------------------------------------------------
+    # Regulatory Elements
     # Methylation based filters
     # 3. Genes with <2 CpGs assayed within enhancer
     #-----------------------------------------------------------------------------

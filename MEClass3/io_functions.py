@@ -124,7 +124,6 @@ def index_raw_data (file, size):
     return data, index, idx_size
                 
 
-
 def read_region_file(file):
     region_list = []
     with open(file, 'r') as FH:
