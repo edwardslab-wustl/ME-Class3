@@ -1,10 +1,67 @@
 import sys
 import os
-from dataclasses import dataclass
 import re
 import gzip
 from collections import defaultdict
 
+from dataclasses import dataclass
+
+#### dataclasses ####
+@dataclass(frozen=True)
+class Param:
+    anno_type: str
+    region_size: int
+    num_pts: str
+
+@dataclass(frozen=True)
+class GeneAnno:
+    id: str
+    txStart: int
+    txEnd: int
+    cdsStart: int
+    cdsEnd: int
+    cdsStartStat: str
+    cdsEndStat: str
+    exonCount: int
+    strand: str
+    chr: str
+    
+    def gene_length(self) -> int:
+        return self.txEnd - self.txStart
+    
+    def tss(self) -> int:
+        if self.strand == '+':
+            tss = self.txStart
+        else:
+            tss = self.txEnd
+        return tss
+    
+    def tes(self) -> int:
+        if self.strand == '+':
+            tes = self.txEnd
+        else:
+            tes = self.txStart
+        return tes
+                
+@dataclass(frozen=True)
+class RegionAnno:
+    id: str
+    region_id: str
+    gene: str
+    chr: str
+    start: int
+    end: int
+    strand: str
+    gene_txStart: int
+    gene_txEnd: int
+    
+    def region_length(self) -> int:
+        return self.end - self.start
+    
+    def mid_point(self) -> int:
+        return round(float(self.end - self.start) / 2)
+ 
+#### functions ####
 def format_args_to_print( args ):
     result = '##### Input Params #####\n'
     for arg in vars(args):
@@ -67,60 +124,7 @@ def index_raw_data (file, size):
     return data, index, idx_size
                 
 
-@dataclass(frozen=True)
-class Param:
-    anno_type: str
-    region_size: int
-    num_pts: str
 
-@dataclass(frozen=True)
-class GeneAnno:
-    id: str
-    txStart: int
-    txEnd: int
-    cdsStart: int
-    cdsEnd: int
-    cdsStartStat: str
-    cdsEndStat: str
-    exonCount: int
-    strand: str
-    chr: str
-    
-    def gene_length(self) -> int:
-        return self.txEnd - self.txStart
-    
-    def tss(self) -> int:
-        if self.strand == '+':
-            tss = self.txStart
-        else:
-            tss = self.txEnd
-        return tss
-    
-    def tes(self) -> int:
-        if self.strand == '+':
-            tes = self.txEnd
-        else:
-            tes = self.txStart
-        return tes
-                
-@dataclass(frozen=True)
-class RegionAnno:
-    id: str
-    region_id: str
-    gene: str
-    chr: str
-    start: int
-    end: int
-    strand: str
-    gene_txStart: int
-    gene_txEnd: int
-    
-    def region_length(self) -> int:
-        return self.end - self.start
-    
-    def mid_point(self) -> int:
-        return round(float(self.end - self.start) / 2)
- 
 def read_region_file(file):
     region_list = []
     with open(file, 'r') as FH:
