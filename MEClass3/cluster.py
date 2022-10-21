@@ -22,6 +22,7 @@ from MEClass3.cluster_functions import cluster_plot_heatmap
 from MEClass3.cluster_functions import subset_and_normalize_data
 from MEClass3.cluster_functions import print_individual_cluster_averages
 from MEClass3.cluster_functions import normalize_expression
+from MEClass3.cluster_functions import select_features
 from MEClass3.io_functions import format_args_to_print, print_to_log
 from MEClass3.io_functions import eprint
 
@@ -56,12 +57,9 @@ def exec_cluster(args):
         merged_data = interp_data.merge(pred_data_filtered, on='gene_id-sample_name')
         merged_data.drop('clf_flag', axis=1, inplace=True)
         #merged_data.dropna()
-        if args.features == 'tss':
-            feat_cols = [ x for x in merged_data if x.startswith("ftss") ]
-        elif args.features == 'enh':
-            feat_cols = [ x for x in merged_data if x.startswith("fre") ]
-        else:
-            eprint("unrecognized feature selection for clustering: " + args.features + '\nCheck help for correct options.\n')
+        feat_cols = select_features(merged_data, args.anno_type, args.data_type)
+        if len(feat_cols) == 0:
+            eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
             exit()
         merged_data_vals = subset_and_normalize_data(merged_data, feat_cols)
         norm_Y = normalize_expression(merged_data['expr_value']) 
@@ -90,7 +88,13 @@ def exec_cluster_help(parser):
     parser_general = parser.add_argument_group('general arguments')
     parser_general.add_argument('--out_base', default='cluster_results', help='base name for output files and plots')
     parser_general.add_argument('--interp_data_path',
-        default='intermediate_files', help='Path to directory with interpolation files')
+        default='intermediate_files', help='Path to directory with merged interpolation files from merge data step.')
+    parser_general.add_argument('--anno_type', default="tss", 
+        choices=["tss", "enh","all"],
+        help='region or gene annotation file')
+    parser_general.add_argument('--data_type', default="mC", 
+        choices=["mC", "hmC", "other", "all"],
+        help='type of data. all uses all data from all annotations and overrides --anno_type')
     parser_general.add_argument('--logfile', default='cluster.log', help='log file')
     #parser.add_argument('--cluster_data', default="both", choices=["meth_only", "hmC_only", "both"],
     #    help="which signatures/data to cluster based on. (default: both)")

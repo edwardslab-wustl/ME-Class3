@@ -96,11 +96,23 @@ def print_individual_cluster_averages(uniq_clusters,fcluster,df,args):
             cluster_data[keep_cols].to_csv(outFile, index=False)
     return cluster_info
 
+def select_features( df, anno_type, data_type):
+    if data_type == 'all':
+        select_cols = [ x for x in df ]
+    elif anno_type == 'all':
+        feat_tag = data_type
+        select_cols = [ x for x in df if x.startswith(feat_tag) ]
+    else:
+        feat_tag = data_type + '-' + anno_type
+        select_cols = [ x for x in df if x.startswith(feat_tag) ]
+    return select_cols
+
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args):
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
     plt.figure(figsize=(8,5)) 
-    y_cols = [x for x in data if x.startswith('ftss')]
+    #y_cols = [x for x in data if x.startswith('ftss')]
+    y_cols = select_features(data, args.anno_type, args.data_type)
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
     y_data_m = pd.melt(y_data, id_vars='index')
@@ -114,8 +126,8 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args)
                        legend=None )
     #lgd=plt.legend(loc=5,bbox_to_anchor=(1.7,0.5),handlelength=1,handletextpad=0.5)
     plt.title("Cluster: %s (n=%d, %s, purity=%5.2f)" % (cluster,data.shape[0],expression_direction,purity))
-    plt.xlabel("Position relative to TSS (bp)")
-    plt.ylabel(r'$\Delta$mCG/CG')
+    plt.xlabel(f"Position relative to {args.anno_type} (bp)")
+    plt.ylabel(r'$\Delta$' + args.data_type)
     md_pt = 0
     plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
     plt.ylim([-args.max_y_val,args.max_y_val])
@@ -135,7 +147,7 @@ def replace_axis_labels(df, column):
     new_df = df.copy(deep=True)
     bin_size = 20
     x_shift = 5000
-    val_dict = dict()
+    #val_dict = dict()
     for i,x in enumerate(new_df[column].unique()):
         x_val = (i * bin_size) - x_shift
         new_df.loc[new_df[column] == x, column] = x_val
