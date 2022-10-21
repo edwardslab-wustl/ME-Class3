@@ -17,7 +17,7 @@ RUN yum install -y htop \
 
 #Install python packages
 RUN pip3 install numpy scipy pandas matplotlib dataclasses scikit-learn
-
+RUN pip3 install seaborn
 #Install Pillow?
 #RUN pip3 install Pillow==6.2.2
 
