@@ -11,7 +11,7 @@ def exec_eval(args):
     df = pd.read_csv( args.dfi_inp, index_col=[0] ).reset_index()
     steps = args.steps_inp
     tag = ((args.dfi_inp).strip().split('.'))[0]
-    output_file_name = ((args.dfi_inp).strip('.csv'))+'_acc_rej.txt'
+    output_file_name = ((args.dfi_inp).rstrip('.csv'))+'_acc_rej.txt'
     df['expr_pred'] = df['expr_pred'].astype(int)
     totalGenes = 0
     totalGenes_P = 0
