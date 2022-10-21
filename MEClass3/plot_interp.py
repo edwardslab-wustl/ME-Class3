@@ -25,10 +25,15 @@ def exec_plot_interp(args):
         if not os.path.exists(param_file):
             eprint(f"Can't find suitable param_file: {param_file}\n")
         x_data,param = read_param_file_list(param_file)
-        if args.number > 0:
+        if args.number == 0 or args.gene_file:
+            data = pd.read_csv(args.interp_file)
+        elif (args.number > 0):
             data = pd.read_csv(args.interp_file, nrows=args.number)
         else:
-            data = pd.read_csv(args.interp_file)
+            eprint(f"Invalid number of genes to print: {args.number}. be integer >= 0. See help.")    
+            exit()
+        if args.gene_file:
+            gene_list = read_gene_file(args.gene_file, int(args.gene_file_id_column))
         feat_cols = [ x for x in data if x.startswith(args.data_type) ]
         #eprint("reading in raw data")
         if args.raw_data:
@@ -52,6 +57,8 @@ def exec_plot_interp(args):
                 file_tag = '.'.join([gene_id, sample_id, enh_info, args.tag, args.anno_type, args.data_type])
                 anno_info = ",".join([sample_id,gene_id,enh_info])
                 feat_id = enh_info + '-' + gene_id
+            if args.gene_file and gene_id not in gene_list:
+                continue
             if args.raw_data:
                 if feat_id in region_dict:
                     (region_chr, region_start_ref_pt, region_end_ref_pt, region_strand) = region_dict[feat_id]
@@ -66,7 +73,13 @@ def exec_plot_interp(args):
                     print_to_log(log_FH, f"Skipping raw data for {feat_id} {gene_id}. Can't find any raw_data.\n")
             out_file = args.output_path + "/" + file_tag + '.png'
             plot_interp(x_data, y_data, raw_x_data, raw_y_data, anno_info, args.data_type, args.anno_type, out_file, param, args)
+    return
 
+def read_gene_file( file, col ):
+    df = pd.read_csv(file, usecols=[col - 1])
+    return_list = list( df.iloc[:,0] )
+    return return_list
+    
 def exec_plot_interp_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-i','--interp_file', default=argparse.SUPPRESS, required=True, help='interpolation file')
@@ -78,6 +91,10 @@ def exec_plot_interp_help(parser):
         help='Raw bedgraph data. Will only plot if supplied.')
     parser_general.add_argument('--anno_file', default=None, 
         help='Must supply this if you want to plot raw data. Ignored otherwise.')
+    parser_general.add_argument('--gene_file', default=None, 
+        help='Only output interp data from these genes. We suggest you leave --number as the default 0 when using this.')
+    parser_general.add_argument('--gene_file_id_column', default=2, type=int,
+        help='Column in gene file with gene ids. First column is 1.')
     parser_general.add_argument('--anno_type', default="tss", 
         choices=["tss", "enh"],
         help='region or gene annotation file')
@@ -85,7 +102,7 @@ def exec_plot_interp_help(parser):
         choices=["mC", "hmC", "other"],
         help='type of data')
     parser_general.add_argument('-n', '--number', default=0, type=int,
-        help='Number of genes to print. Starts at top of file. Set to 0 to print all.')
+        help='Number of genes to print. Starts at top of file. Set to 0 to print all. Overridden if you enter a --gene_file.')
     #parser_general.add_argument('--num_proc', type=int, default=0, help='number of processes to run')
     parser_general.add_argument('-o', '--output_path', action='store', dest='output_path',
         default='interp_plots', help='Path to Output')
