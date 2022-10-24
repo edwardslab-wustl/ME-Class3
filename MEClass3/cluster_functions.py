@@ -85,7 +85,7 @@ def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_di
     else:
         data_list = [ args.data_type ]
     if args.anno_type == 'all':
-        anno_list = ['mC', 'hmC']
+        anno_list = ['tss', 'enh']
     else:
         anno_list = [ args.anno_type ]
     for data_type in data_list:
