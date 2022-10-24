@@ -9,13 +9,8 @@ Created on Mon Dec 19 11:30:15 2016
 import argparse
 from os.path import exists
 
-#import seaborn as sns
 import pandas as pd
-#import scipy.stats
-#import scipy.spatial.distance
 import scipy.cluster.hierarchy    
-
-#from matplotlib import pyplot as plt
 
 from MEClass3.cluster_functions import read_pred_file
 from MEClass3.cluster_functions import cluster_plot_heatmap

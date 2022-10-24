@@ -125,7 +125,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
     plt.figure(figsize=(8,5)) 
-    #y_cols = [x for x in data if x.startswith('ftss')]
     y_cols = select_features(data, args.anno_type, args.data_type)
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
@@ -140,7 +139,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
         y_data['info'] = y_data.iloc[:,0]
         legend = None
     all_data = pd.merge(x_data,y_data)
-    #y_data_m = pd.melt(y_data, id_vars='index')
     y_data_m = pd.melt(all_data, id_vars=['x_data','hue', 'index', 'info'])
     ax = sns.lineplot( data=y_data_m,
                        x='x_data',
@@ -154,7 +152,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     elif anno_type == 'enh':
         ax.set_xlabel("Distance to Enhancer (bp)")
         plt.legend(loc='right', title='',bbox_to_anchor=(1.4,0.5),handlelength=1,handletextpad=0.5,frameon=False)
-    #lgd=plt.legend(loc=5,bbox_to_anchor=(1.7,0.5),handlelength=1,handletextpad=0.5)
     else:
         ax.set_xlabel("Relative Position (bp)")
     plt.ylabel(r'$\Delta$' + data_type)
@@ -176,15 +173,10 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
         x_tick_minorLocator = MultipleLocator(100)
         ax.xaxis.set_minor_locator(x_tick_minorLocator)
     plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
-    #plt.xlim([-5000,5000])
-    #plt.xticks((-5000,md_pt,5000),('-5kb','TSS','+5kb'))
-    #x_tick_minorLocator = MultipleLocator(1000)
-    #ax.xaxis.set_minor_locator(x_tick_minorLocator)
     if args.tight_layout:
         plt.tight_layout()
     plot_file = args.out_base + f".meth_cpg.cluster_{cluster}.{data_type}.{anno_type}.png"
     plt.savefig(plot_file, bbox_inches='tight')
-    #plt.savefig(args.out_base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close()
     return
 
