@@ -14,9 +14,9 @@ def read_interp_files(file_list):
     df = ''
     for file in file_list:
         if len(df) == 0:
-            df = pd.read_csv(file)
+            df = pd.read_csv(file, comment='#')
         else:
-            df_tmp = pd.read_csv(file)
+            df_tmp = pd.read_csv(file, comment='#')
             df_new = pd.concat([df, df_tmp], ignore_index=True)
             df = df_new
             del df_tmp

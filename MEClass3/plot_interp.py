@@ -8,7 +8,8 @@ from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import eprint
-from MEClass3.io_functions import read_param_file_list
+#from MEClass3.io_functions import read_param_file_list
+from MEClass3.io_functions import read_params_from_interp
 from MEClass3.io_functions import index_raw_data
 from MEClass3.plot_interp_functions import grab_region_data
 from MEClass3.plot_interp_functions import extract_raw_data
@@ -18,17 +19,27 @@ def exec_plot_interp(args):
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
         mk_output_dir(args.output_path)
-        if args.interp_param_file:
-            param_file = args.interp_param_file
+        #if args.interp_param_file:
+        #    param_file = args.interp_param_file
+        #else:
+        #    param_file = args.interp_file.strip(".csv") + ".param"
+        #if not os.path.exists(param_file):
+        #    eprint(f"Can't find suitable param_file: {param_file}\n")
+        #x_data,param = read_param_file_list(param_file)
+        anno_id = args.data_type + '-' + args.anno_type
+        x_data_dict,param_dict = read_params_from_interp(args.interp_file)
+        x_data = list()
+        param = ''
+        if anno_id in param_dict:
+            x_data = x_data_dict[ anno_id ]
+            param = param_dict[ anno_id ]
         else:
-            param_file = args.interp_file.strip(".csv") + ".param"
-        if not os.path.exists(param_file):
-            eprint(f"Can't find suitable param_file: {param_file}\n")
-        x_data,param = read_param_file_list(param_file)
+            eprint(f"Can't find appropriate annotation data for features in interp file. Recheck anno_type {args.anno_type} and data_type {args.data_type}.\n")
+            exit()
         if args.number == 0 or args.gene_file:
-            data = pd.read_csv(args.interp_file)
+            data = pd.read_csv(args.interp_file, comment='#')
         elif (args.number > 0):
-            data = pd.read_csv(args.interp_file, nrows=args.number)
+            data = pd.read_csv(args.interp_file, nrows=args.number, comment='#')
         else:
             eprint(f"Invalid number of genes to print: {args.number}. be integer >= 0. See help.")    
             exit()
@@ -85,8 +96,8 @@ def exec_plot_interp_help(parser):
     parser_required.add_argument('-i','--interp_file', default=argparse.SUPPRESS, required=True, help='interpolation file')
     parser_general = parser.add_argument_group('general arguments')
     parser_general.add_argument('-t', '--tag', default='interp', help='Tag for output')
-    parser_general.add_argument('--interp_param_file', default=None, 
-        help='for interp file <base>.csv assumed to be <base>.param.csv')
+    #parser_general.add_argument('--interp_param_file', default=None, 
+    #    help='for interp file <base>.csv assumed to be <base>.param.csv')
     parser_general.add_argument('--raw_data', default=None, 
         help='Raw bedgraph data. Will only plot if supplied.')
     parser_general.add_argument('--anno_file', default=None, 

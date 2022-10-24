@@ -9,6 +9,7 @@ from MEClass3.interpolation_functions import add_fail
 from MEClass3.interpolation_functions import interp_list_sp
 from MEClass3.interpolation_functions import interp_list_mp
 from MEClass3.interpolation_functions import generate_param_list
+from MEClass3.interpolation_functions import generate_param_comment
 from MEClass3.interpolation_functions import format_fail_dict
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import read_anno_file 
@@ -49,12 +50,14 @@ def exec_interp(args):
                     anno_list_postfilter.append(gene)
             out_file_suffix = '_gene_interp'
             fail_text = 'genes'
-            param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
+            #param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
+            param_data = generate_param_comment(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
         elif anno_type == 'enh':
             anno_list_postfilter = anno_list_prefilter
             out_file_suffix = '_enh_interp'
             fail_text = 'enhancers'
-            param_data = generate_param_list(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
+            #param_data = generate_param_list(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
+            param_data = generate_param_comment(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
         else:
             eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
             exit()
@@ -63,10 +66,10 @@ def exec_interp(args):
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
             out_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".csv"
-            param_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".param"
+            #param_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".param"
             print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
             print_to_log(log_FH, "out_file: " + out_file + "\n")
-            print_to_log(log_FH, "param_file: " + param_file + "\n")
+            #print_to_log(log_FH, "param_file: " + param_file + "\n")
             dict_bed = {}
             bed_file_lines = read_bed_file(sample_file)
             chr_track = 'chr00'
@@ -89,10 +92,11 @@ def exec_interp(args):
             print_to_log(log_FH, f"Interpolation time: {interp_end_time - interp_start_time:0.4f} seconds\n\n")
             print_to_log(log_FH, format_fail_dict(gene_fail_dict, fail_text))
             with open(out_file, 'w') as out_FH:
+                out_FH.write(param_data + "\n")
                 out_FH.write(out_header)
                 out_FH.write(out_data)
-            with open(param_file, 'w') as out_FH:
-                out_FH.write("\n".join(param_data))
+            #with open(param_file, 'w') as out_FH:
+            #    out_FH.write("\n".join(param_data))
             dict_bed.clear()
             del dict_bed
 

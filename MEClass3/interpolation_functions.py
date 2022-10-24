@@ -19,6 +19,21 @@ def generate_out_header(num_pts, anno_type, data_type):
         header +=  ',' + "-".join([data_type,anno_type,str(pos)])
     return header + "\n"
 
+def generate_param_comment(num_pts, region_size, data_type, anno_type):
+    anno_id = data_type + '-' + anno_type
+    param_data = '# Info:' + ",".join([anno_id,str(region_size),str(num_pts)])
+    param_data += ' Data:'
+    step_size = int(2 * region_size / num_pts )
+    if anno_type == 'tss':
+        pos = -region_size + int(step_size/2)
+    else:
+        pos = -region_size + int(step_size/2) # THERE SEEMS TO BE AN OFFSET ISSUE HERE FOR ENHANCERS!
+    for pnt in range(num_pts):
+        tmp = "-".join([anno_id,str(pnt)])
+        param_data += (tmp + ',' + str(pos) + ';')
+        pos += step_size
+    return param_data
+
 def generate_param_list(num_pts, region_size, data_type, anno_type):
     param_data = []
     param_data.append('#' + ",".join([anno_type,str(region_size),str(num_pts)]))

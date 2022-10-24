@@ -10,6 +10,7 @@ from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import print_to_log
 from MEClass3.merge_data_functions import add_tss_interp
 from MEClass3.merge_data_functions import add_enh_interp
+from MEClass3.merge_data_functions import add_interp_header
 
 def exec_merge_data(args):
     expr_file = args.expr
@@ -23,15 +24,27 @@ def exec_merge_data(args):
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
             df_expr = df_expr_all.loc[:, [sample_pair.tag1, sample_pair.tag2]]
             df_interp = ''
-            if args.tss:
-                interp_file = args.file_path + "/" + sample_pair.name + args.tss_base + ".csv"
-                print_to_log(log_FH, "\tadding tss interp data: " + interp_file + "\n")
+            header_list = list()
+            if args.mC_tss:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
+                print_to_log(log_FH, f"\tadding mC tss interp data: " + interp_file + "\n")
                 df_interp = add_tss_interp(df_interp, interp_file)
-            if args.enh:
-                interp_file = args.file_path + "/" + sample_pair.name + args.enh_base + ".csv"
-                print_to_log(log_FH, "\tadding enh interp data: " + interp_file + "\n")
+                header_list = add_interp_header(interp_file, header_list)
+            if args.mC_enh:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
+                print_to_log(log_FH, "\tadding mC enh interp data: " + interp_file + "\n")
                 df_interp = add_enh_interp(df_interp, interp_file)
-                
+                header_list = add_interp_header(interp_file, header_list)
+            if args.hmC_tss:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
+                print_to_log(log_FH, f"\tadding mhC tss interp data: " + interp_file + "\n")
+                df_interp = add_tss_interp(df_interp, interp_file)
+                header_list = add_interp_header(interp_file, header_list)
+            if args.hmC_enh:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
+                print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
+                df_interp = add_enh_interp(df_interp, interp_file)
+                header_list = add_interp_header(interp_file, header_list)
             df_interp['gene_id'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[0])
             df_interp['sample_name'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[1])    
             df_interp = df_interp.set_index('gene_id-sample_name')
@@ -87,7 +100,12 @@ def exec_merge_data(args):
             # Finally write data for classifier
             out_file = args.output_path + '/' + sample_pair.name + '.interp_expr_data.csv' 
             print_to_log(log_FH, "\tprinting to outfile: " + out_file)
-            df_interp.to_csv(out_file, sep=',')
+            #df_interp.to_csv(out_file, sep=',')
+            out_csv_data = df_interp.to_csv(None, sep=',')
+            with open(out_file, 'w') as out_FH:
+                for header in header_list:
+                    out_FH.write(header)
+                out_FH.write(out_csv_data)
 
 def exec_merge_data_help(parser):
     parser_required = parser.add_argument_group('required arguments')
@@ -102,10 +120,14 @@ def exec_merge_data_help(parser):
         default='intermediate_files', help='Path to directory with interpolation files')
     parser.add_argument('-o', '--output_path',
         default='intermediate_files', help='Path to directory to store output files')
-    parser.add_argument('--tss', action='store_true', default=False, help='Use tss interpolation data')
-    parser.add_argument('--tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
-    parser.add_argument('--enh', action='store_true', default=False, help='Use enh interpolation data')
-    parser.add_argument('--enh_base', type=str, default='_enh_interp', help='Base part of enh interpolation file name')
+    parser.add_argument('--mC_tss', action='store_true', default=False, help='Use tss interpolation data')
+    parser.add_argument('--mC_tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
+    parser.add_argument('--mC_enh', action='store_true', default=False, help='Use enh interpolation data')
+    parser.add_argument('--mC_enh_base', type=str, default='_enh_interp', help='Base part of enh interpolation file name')
+    parser.add_argument('--hmC_tss', action='store_true', default=False, help='Use tss interpolation data')
+    parser.add_argument('--hmC_tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
+    parser.add_argument('--hmC_enh', action='store_true', default=False, help='Use enh interpolation data')
+    parser.add_argument('--hmC_enh_base', type=str, default='_enh_interp', help='Base part of enh interpolation file name')
     #parser_required.add_argument('-expr', action='store', dest='expr_inp', required=True, help='Expression file')
     #parser_required.add_argument('-intrp', action='store', dest='intrp_inp', required=True, help='Interpolation CSV file')
     parser.add_argument('--floor_expr', type=bool, default=True, help='Floor expression value?')

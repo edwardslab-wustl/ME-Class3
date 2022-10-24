@@ -1,17 +1,17 @@
 
-import argparse
-
 import numpy as np
 import pandas as pd
 
-from MEClass3.sample import read_sample_file
-from MEClass3.io_functions import format_args_to_print
-from MEClass3.io_functions import mk_output_dir
-from MEClass3.io_functions import print_to_log
+def add_interp_header(file, header_list):
+    with open(file, 'r') as FH:
+        for line in FH:
+            if line.startswith('#'):
+                header_list.append(line)
+    return header_list
 
 def add_tss_interp(df_interp, file):
     df_merged = ''
-    tss_interp = pd.read_csv(file)
+    tss_interp = pd.read_csv(file, comment='#')
     if len(df_interp) == 0:
         df_merged = tss_interp
     else:
@@ -32,7 +32,7 @@ def fix_column_headers(df, tag):
         
 def add_enh_interp(df_interp, file):
     df_merged = ''
-    enh_interp_all = pd.read_csv(file)
+    enh_interp_all = pd.read_csv(file, comment='#')
     enh_interp_all['enh_loc'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[0])
     enh_interp_all['gene_id-sample_name'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[1])
     if len(df_interp) != 0:
