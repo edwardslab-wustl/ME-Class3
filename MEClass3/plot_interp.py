@@ -1,6 +1,5 @@
 
 import argparse
-import os.path
 
 import pandas as pd
 
@@ -8,7 +7,6 @@ from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import eprint
-#from MEClass3.io_functions import read_param_file_list
 from MEClass3.io_functions import read_params_from_interp
 from MEClass3.io_functions import index_raw_data
 from MEClass3.plot_interp_functions import grab_region_data
@@ -19,13 +17,6 @@ def exec_plot_interp(args):
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
         mk_output_dir(args.output_path)
-        #if args.interp_param_file:
-        #    param_file = args.interp_param_file
-        #else:
-        #    param_file = args.interp_file.strip(".csv") + ".param"
-        #if not os.path.exists(param_file):
-        #    eprint(f"Can't find suitable param_file: {param_file}\n")
-        #x_data,param = read_param_file_list(param_file)
         anno_id = args.data_type + '-' + args.anno_type
         x_data_dict,param_dict = read_params_from_interp(args.interp_file)
         x_data = list()
