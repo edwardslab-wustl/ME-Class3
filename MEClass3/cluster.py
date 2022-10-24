@@ -9,13 +9,13 @@ Created on Mon Dec 19 11:30:15 2016
 import argparse
 from os.path import exists
 
-import seaborn as sns
+#import seaborn as sns
 import pandas as pd
 #import scipy.stats
 #import scipy.spatial.distance
 import scipy.cluster.hierarchy    
 
-from matplotlib import pyplot as plt
+#from matplotlib import pyplot as plt
 
 from MEClass3.cluster_functions import read_pred_file
 from MEClass3.cluster_functions import cluster_plot_heatmap
@@ -38,15 +38,17 @@ def exec_cluster(args):
         interp_data = ''
         found_data_flag = False
         for sample in pred_data_filtered['sample_name'].unique():
-            sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv.gz"
+            sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv"
+            if not exists(sample_file):
+                sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv.gz"
             if exists(sample_file):
                 print_to_log(log_FH, f"Reading in file: {sample_file}\n")
                 found_data_flag = True
                 if len(interp_data) == 0:
-                    interp_data = pd.read_csv(sample_file)
+                    interp_data = pd.read_csv(sample_file, comment='#')
                     interp_data.drop(['gene_id','sample_name','expr_value','expr_flag'], axis=1, inplace=True)
                 else:
-                    tmp = pd.read_csv(sample_file)
+                    tmp = pd.read_csv(sample_file, comment='#')
                     tmp.drop(['gene_id','sample_name','expr_value','expr_flag'], axis=1, inplace=True)
                     interp_data = pd.concat([interp_data, tmp], axis=0, ignore_index=True)
             else:
