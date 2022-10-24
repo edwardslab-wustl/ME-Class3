@@ -76,24 +76,38 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, args):
     plt.close()   
     return
 
-def print_individual_cluster_averages(uniq_clusters,fcluster,df,args):    
+def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_dict, param_dict, args):    
     cluster_info = []
-    for cluster in uniq_clusters:
-        idx = [ i for i,fc in enumerate(fcluster) if cluster == fc ]
-        cluster_data = df.iloc[idx]
-        purity,expression_direction = check_purity(cluster_data['expr_flag'])
-        cluster_info.append("cluster: " + str(cluster) + 
-                "; Expr. Dir: " + expression_direction +
-                "; purity: " + str(purity) +
-                "; num_genes: " + str(len(cluster_data['expr_flag'])) + "\n")
-        if cluster_data.shape[0] >= args.min_genes_per_cluster and purity >= args.min_cluster_purity:
-            #cluster_labels = [l for i,l in enumerate(cluster_data['gene_id']) if i in idx]
-#            average_print_helper_meth_cpg(Xs,Cs,str(cluster),of_base,cluster_labels,purity,expression_direction,data_info,args)
-            average_print_helper_meth_cpg(cluster_data,str(cluster),purity,expression_direction,args)
-            outFile = (args.out_base+".meth_cpg.cluster_%s"%(cluster)+".csv")
-            keep_cols= ['gene_id-sample_name','gene_id','sample_name',
-                        'expr_value','expr_flag','prob_dn','prob_up','expr_pred']
-            cluster_data[keep_cols].to_csv(outFile, index=False)
+    data_list = []
+    anno_list = []
+    if args.data_type == 'all':
+        data_list = ['mC', 'hmC']
+    else:
+        data_list = [ args.data_type ]
+    if args.anno_type == 'all':
+        anno_list = ['mC', 'hmC']
+    else:
+        anno_list = [ args.anno_type ]
+    for data_type in data_list:
+        for anno_type in anno_list:
+            anno_id = data_type + '-' + anno_type
+            x_data = pd.DataFrame(param_data_dict[ anno_id ], columns=['info', 'x_data'])
+            for cluster in uniq_clusters:
+                idx = [ i for i,fc in enumerate(fcluster) if cluster == fc ]
+                cluster_data = df.iloc[idx]
+                purity,expression_direction = check_purity(cluster_data['expr_flag'])
+                cluster_info.append("cluster: " + str(cluster) + 
+                        "; Expr. Dir: " + expression_direction +
+                        "; purity: " + str(purity) +
+                        "; num_genes: " + str(len(cluster_data['expr_flag'])) + "\n")
+                if cluster_data.shape[0] >= args.min_genes_per_cluster and purity >= args.min_cluster_purity:
+                    #cluster_labels = [l for i,l in enumerate(cluster_data['gene_id']) if i in idx]
+        #            average_print_helper_meth_cpg(Xs,Cs,str(cluster),of_base,cluster_labels,purity,expression_direction,data_info,args)
+                    average_print_helper_meth_cpg(cluster_data,str(cluster),purity,expression_direction,x_data,param_dict,anno_id,args)
+                    outFile = (args.out_base+".meth_cpg.cluster_%s"%(cluster)+".csv")
+                    keep_cols= ['gene_id-sample_name','gene_id','sample_name',
+                                'expr_value','expr_flag','prob_dn','prob_up','expr_pred']
+                    cluster_data[keep_cols].to_csv(outFile, index=False)
     return cluster_info
 
 def select_features( df, anno_type, data_type):
@@ -107,7 +121,7 @@ def select_features( df, anno_type, data_type):
         select_cols = [ x for x in df if x.startswith(feat_tag) ]
     return select_cols
 
-def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args):
+def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
     plt.figure(figsize=(8,5)) 
@@ -115,30 +129,61 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,args)
     y_cols = select_features(data, args.anno_type, args.data_type)
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
-    y_data_m = pd.melt(y_data, id_vars='index')
-    y_data_m['hue'] = pd.Series(['signal' for x in range(len(y_data_m.index))])
-    y_data_m_lab = replace_axis_labels(y_data_m, 'index')
-    ax = sns.lineplot( data=y_data_m_lab,
-                       x='index',
+    param = param_dict[ anno_id ]
+    x_range = [-param.region_size,param.region_size]
+    [data_type,anno_type] = anno_id.split('-')
+    if anno_type == 'enh':
+        y_data[['info','hue']] = y_data['index'].str.split('_', n=1, expand=True)
+        legend = 'full'
+    else:
+        y_data['hue'] = pd.Series(['signal' for x in range(len(y_data.index))])
+        y_data['info'] = y_data.iloc[:,0]
+        legend = None
+    all_data = pd.merge(x_data,y_data)
+    #y_data_m = pd.melt(y_data, id_vars='index')
+    y_data_m = pd.melt(all_data, id_vars=['x_data','hue', 'index', 'info'])
+    ax = sns.lineplot( data=y_data_m,
+                       x='x_data',
                        y='value',
                        ci=args.confidence_interval,
                        hue='hue',
-                       legend=None )
-    #lgd=plt.legend(loc=5,bbox_to_anchor=(1.7,0.5),handlelength=1,handletextpad=0.5)
+                       legend=legend )
     plt.title("Cluster: %s (n=%d, %s, purity=%5.2f)" % (cluster,data.shape[0],expression_direction,purity))
-    plt.xlabel(f"Position relative to {args.anno_type} (bp)")
-    plt.ylabel(r'$\Delta$' + args.data_type)
+    if anno_type == 'tss':
+        ax.set_xlabel("Distance to TSS (bp)")
+    elif anno_type == 'enh':
+        ax.set_xlabel("Distance to Enhancer (bp)")
+        plt.legend(loc='right', title='',bbox_to_anchor=(1.4,0.5),handlelength=1,handletextpad=0.5,frameon=False)
+    #lgd=plt.legend(loc=5,bbox_to_anchor=(1.7,0.5),handlelength=1,handletextpad=0.5)
+    else:
+        ax.set_xlabel("Relative Position (bp)")
+    plt.ylabel(r'$\Delta$' + data_type)
     md_pt = 0
     plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
     plt.ylim([-args.max_y_val,args.max_y_val])
     plt.yticks(np.arange(-args.max_y_val, args.max_y_val*1.05, step=0.2))
-    plt.xlim([-5000,5000])
-    plt.xticks((-5000,md_pt,5000),('-5kb','TSS','+5kb'))
-    x_tick_minorLocator = MultipleLocator(1000)
-    ax.xaxis.set_minor_locator(x_tick_minorLocator)
+    plt.xlim(x_range)
+    if anno_type == 'tss':
+        feat_label = "TSS"
+        x_tick_minorLocator = MultipleLocator(1000)
+        ax.xaxis.set_minor_locator(x_tick_minorLocator)
+    elif anno_type == 'enh':
+        feat_label = "Enhancer"
+        x_tick_minorLocator = MultipleLocator(100)
+        ax.xaxis.set_minor_locator(x_tick_minorLocator)
+    else:
+        feat_label = anno_type
+        x_tick_minorLocator = MultipleLocator(100)
+        ax.xaxis.set_minor_locator(x_tick_minorLocator)
+    plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
+    #plt.xlim([-5000,5000])
+    #plt.xticks((-5000,md_pt,5000),('-5kb','TSS','+5kb'))
+    #x_tick_minorLocator = MultipleLocator(1000)
+    #ax.xaxis.set_minor_locator(x_tick_minorLocator)
     if args.tight_layout:
         plt.tight_layout()
-    plt.savefig(args.out_base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_inches='tight')
+    plot_file = args.out_base + f".meth_cpg.cluster_{cluster}.{data_type}.{anno_type}.png"
+    plt.savefig(plot_file, bbox_inches='tight')
     #plt.savefig(args.out_base+".meth_cpg.cluster_%s"%(cluster)+".png", bbox_extra_artists=(lgd,), bbox_inches='tight')
     plt.close()
     return

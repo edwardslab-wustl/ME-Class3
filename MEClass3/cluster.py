@@ -23,8 +23,10 @@ from MEClass3.cluster_functions import subset_and_normalize_data
 from MEClass3.cluster_functions import print_individual_cluster_averages
 from MEClass3.cluster_functions import normalize_expression
 from MEClass3.cluster_functions import select_features
-from MEClass3.io_functions import format_args_to_print, print_to_log
+from MEClass3.io_functions import format_args_to_print
+from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
+from MEClass3.io_functions import read_params_from_interp_2
 
 #warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -37,6 +39,8 @@ def exec_cluster(args):
             ((args.lowerPredBound <= pred_data['prob_dn']) & (pred_data['prob_dn'] <= args.upperPredBound)) ]
         interp_data = ''
         found_data_flag = False
+        param_data_dict = dict()
+        param_dict = dict()
         for sample in pred_data_filtered['sample_name'].unique():
             sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv"
             if not exists(sample_file):
@@ -44,6 +48,7 @@ def exec_cluster(args):
             if exists(sample_file):
                 print_to_log(log_FH, f"Reading in file: {sample_file}\n")
                 found_data_flag = True
+                param_data_dict, param_dict = read_params_from_interp_2(sample_file)
                 if len(interp_data) == 0:
                     interp_data = pd.read_csv(sample_file, comment='#')
                     interp_data.drop(['gene_id','sample_name','expr_value','expr_flag'], axis=1, inplace=True)
@@ -54,7 +59,7 @@ def exec_cluster(args):
             else:
                 print_to_log(log_FH, f"Skipping {sample}, can't find file: {sample_file}\n")
         if not found_data_flag:
-            eprint("Can't find any interpolation data!\nCheck file paths and names.\n")
+            eprint(f"Can't find any interpolation data: {sample_file}!\nCheck file paths and names.\n")
             exit()
         merged_data = interp_data.merge(pred_data_filtered, on='gene_id-sample_name')
         merged_data.drop('clf_flag', axis=1, inplace=True)
@@ -71,7 +76,7 @@ def exec_cluster(args):
         cluster_tags = [float(ct % 2) for ct in fcluster] 
         uniq_clusters = list(set(fcluster))
         cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,args)
-        cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,args)
+        cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,param_data_dict, param_dict, args)
         print_to_log(log_FH, "\n".join(cluster_info))
         return
         

@@ -124,6 +124,24 @@ def read_params_from_interp(file):
                     data_result [ anno_type ] = data_pos_list
     return data_result, param_result
 
+def read_params_from_interp_2(file):
+    param_result = dict()
+    data_result = dict()
+    with open(file, 'r') as FH:
+        for line in FH:
+            if line.startswith('#'):
+                (comment, info, data) = line.strip().split()
+                (anno_type,region_size,num_pts) = info.split(':')[1].split(',')
+                param = Param(anno_type, int(region_size), int(num_pts))
+                data_list = data.split(':')[1].split(';')
+                data_pos_list = [ [x.split(',')[0],int(x.split(',')[1])] for x in data_list if len(x) > 0]
+                if anno_type in param_result:
+                    eprint(f"Found multiple entries for anno_type: {anno_type} in interp file: {file}\nOnly using first one.")
+                else:
+                    param_result[ anno_type ] = param
+                    data_result [ anno_type ] = data_pos_list
+    return data_result, param_result
+
 def index_raw_data (file, size):
     index = defaultdict(list)
     data = defaultdict(dict)
