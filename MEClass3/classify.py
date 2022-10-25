@@ -56,9 +56,10 @@ def exec_classify(args):
     # Add train and test flag for classifier to use and mark all null
     df['clf_flag'] = 'null'
     df.set_index('gene_id-sample_name')
-    feature_column_names = ( df.columns[pd.Series(df.columns).str.startswith('f')] ).tolist()
-    df_fi = pd.DataFrame(columns=feature_column_names)
+    #feature_column_names = ( df.columns[pd.Series(df.columns).str.startswith('f')] ).tolist()
     drop_col_list = ['gene_id-sample_name','sample_name','expr_value','expr_flag','prob_up','prob_dn','expr_pred','clf_flag','gene_id']
+    feature_column_names = [ x for x in df.columns if x not in drop_col_list ]
+    df_fi = pd.DataFrame(columns=feature_column_names)
     #===============================================
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
@@ -240,13 +241,13 @@ def exec_classify(args):
         
         # Feature importance output
         if args.featureImportance:
-            df_fi.to_csv(args.tag+'.RF_featureImportance.csv', sep=',', index=False)
-            dfi_items = ['\t'.join(['feature','sum','mean'])+'\n']
+            df_fi.to_csv(args.tag+'.featureImportance.perFold.csv', sep=',', index=False)
+            dfi_items = [','.join(['feature','sum','mean'])]
             for item in df_fi.columns:
                 #dfi_items.append( str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
-                dfi_items.append( item + '\t' + str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
+                dfi_items.append( ','.join([item,str(df_fi[item].sum()),str(df_fi[item].mean())]) )
     
-            open(args.tag+'_featureImportance_out.txt', 'w').write(''.join(dfi_items))
+            open(args.tag+'.featureImportance.mean.csv', 'w').write('\n'.join(dfi_items))
  
  
 def exec_classify_help(parser):
