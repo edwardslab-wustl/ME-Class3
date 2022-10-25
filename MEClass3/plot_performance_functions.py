@@ -116,7 +116,7 @@ def set_matplotlib_params(args, version):
                     'xtick.labelsize': 25,
                     'ytick.labelsize': 25}
         pylab.rcParams.update(params)
-        return 0
+        return 
 
 def print_acc_rejectrate (results, type, args):
     outFile = args.outFileBase + "." + type + ".acc_rejectrate.txt"
@@ -125,7 +125,7 @@ def print_acc_rejectrate (results, type, args):
     for result in results:
         fh.write(result.pull_acc_rejectrate())
     fh.close()
-    return 0
+    return 
 
 def plot_acc_rejectrate (results, outFile, args,version):
     sys.stderr.write("plotting Accuracy and RejectRate data to: %s\n" % outFile)
@@ -155,7 +155,7 @@ def print_roc (results, args):
     for result in results:
         roc_fh.write(result.pull_roc())
     roc_fh.close()
-    return 0
+    return 
 
 def plot_roc (results, outFile, args, version):
     sys.stderr.write("plotting ROC data to: %s\n" % outFile)
@@ -178,7 +178,7 @@ def plot_roc (results, outFile, args, version):
     else:
         lgd=plt.legend(loc="best")
     plt.savefig(outFile, bbox_extra_artists=(lgd,), bbox_inches='tight')
-    return 0
+    return 
 
 def calculate_acc_rejectrate (results, type, args):
     sys.stderr.write("calculating accuracy and reject rate, class: %s\n" % type)
@@ -242,7 +242,7 @@ def calculate_acc_rejectrate (results, type, args):
         result.acc_rejrate_rejectRate = rejectRate_list
         result.acc_rejrate_numGenes_P = numGenes_P_list
         result.acc_rejrate_numGenes_N = numGenes_N_list
-    return 0
+    return 
 
 
 def calculate_roc (results, args):
@@ -255,8 +255,7 @@ def calculate_roc (results, args):
         result.roc_fpr = fpr
         result.roc_tpr = tpr
         result.roc_thresholds = thresholds
-
-    return 0
+    return 
 
 def calculate_labels (samples, args):
     sys.stderr.write("calculating labels\n")
@@ -271,7 +270,7 @@ def calculate_labels (samples, args):
                 labels.append(-1)
         sample.set_labels(labels)
         #sys.stderr.write("\texample labels %s\n" % (str(labels[0])))
-    return 0
+    return 
 
 
 def calculate_results(samples, args):

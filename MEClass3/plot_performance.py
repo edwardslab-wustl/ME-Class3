@@ -1,4 +1,3 @@
-#!/home/manoj/anaconda3/bin/python3
 
 #--------------------------------------------
 # -*- coding: utf-8 -*-
