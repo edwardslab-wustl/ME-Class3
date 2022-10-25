@@ -10,10 +10,13 @@ from MEClass3.preprocess import exec_preprocess, exec_preprocess_help
 from MEClass3.interpolation import exec_interp, exec_interp_help
 from MEClass3.overlap_genes_enhancers import exec_overlap_genes_enhancers, exec_overlap_genes_enhancers_help
 from MEClass3.classify import exec_classify, exec_classify_help
-from MEClass3.evaluation import exec_eval, exec_eval_help
 from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
 from MEClass3.cluster import exec_cluster, exec_cluster_help
 from MEClass3.plot_interp import exec_plot_interp, exec_plot_interp_help
+from MEClass3.plot_performance import exec_plot_performance, exec_plot_performance_help
+
+#from MEClass3.evaluation import exec_eval, exec_eval_help
+
 #from MEClass3.filter import exec_filter, exec_filter_help
 #from MEClass3.setup_expr import exec_setup_expr, exec_setup_expr_help
 #from MEClass3.merge_features import exec_merge_features, exec_merge_features_help
@@ -60,11 +63,17 @@ def setup_subcommands():
                                 help = "Train and run classifier",
                                 desc = "Trains classifier to predict expression changes using methylation signatures for each gene/enhancer/region"))
 
-    subcommands.append( Subcommand( name="eval", 
-                                function=exec_eval,
-                                help_function=exec_eval_help,
-                                help = "Evaluate classifier performance",
-                                desc = "Evaluate classifier performance."))
+#    subcommands.append( Subcommand( name="eval", 
+#                                function=exec_eval,
+#                                help_function=exec_eval_help,
+#                                help = "Evaluate classifier performance",
+#                                desc = "Evaluate classifier performance."))
+    
+    subcommands.append( Subcommand( name="plot_performance", 
+                                function=exec_plot_performance,
+                                help_function=exec_plot_performance_help,
+                                help = "Plot classifier performance",
+                                desc = "Determine and plot results from ME-Class predictions."))
     
     subcommands.append( Subcommand( name="cluster", 
                                 function=exec_cluster,
@@ -75,7 +84,7 @@ def setup_subcommands():
     subcommands.append( Subcommand( name="plot_interp", 
                                 function=exec_plot_interp,
                                 help_function=exec_plot_interp_help,
-                                help = "Plot methylationi signatures",
+                                help = "Plot methylation signatures",
                                 desc = "Plot methylation signatures."))
 
 #    subcommands.append( Subcommand( name="merge_features", 
