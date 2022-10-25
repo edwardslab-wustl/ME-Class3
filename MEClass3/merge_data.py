@@ -101,6 +101,8 @@ def exec_merge_data(args):
             out_file = args.output_path + '/' + sample_pair.name + '.interp_expr_data.csv' 
             print_to_log(log_FH, "\tprinting to outfile: " + out_file)
             #df_interp.to_csv(out_file, sep=',')
+            if 'enh_loc-gene_id-sample_name' in df_interp.columns:
+                df_interp.drop(['enh_loc-gene_id-sample_name'], axis=1, inplace=True)
             out_csv_data = df_interp.to_csv(None, sep=',')
             with open(out_file, 'w') as out_FH:
                 for header in header_list:
