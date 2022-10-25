@@ -29,6 +29,7 @@ def normalize_expression(E):
 def subset_and_normalize_data( df, columns):
     result = df.loc[:,columns]
     result = sklearn.preprocessing.normalize(result)
+    result = pd.DataFrame(result, columns=columns)
     return result
 
 def check_purity(Y):
@@ -68,9 +69,11 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, args):
         sns.clustermap( df, row_colors=row_colors,col_cluster = False,
                            figsize=(35,25),  method=args.linkage_method, row_linkage=linkage,
                            cmap=meth_cmap, linewidths = 0,
-                           xticklabels=False,yticklabels=False,
+                           xticklabels=True,yticklabels=False,
                            vmin = vmin, vmax = vmax,
                            dendrogram_ratio=(.08, .2))
+                           #xticklabels=False,yticklabels=False,
+    ##plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0) cg = sns.clustermap
     plt.title(title)
     plt.savefig(filename)
     plt.close()   
