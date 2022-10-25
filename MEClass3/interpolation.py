@@ -8,7 +8,7 @@ from MEClass3.interpolation_functions import generate_out_header
 from MEClass3.interpolation_functions import add_fail
 from MEClass3.interpolation_functions import interp_list_sp
 from MEClass3.interpolation_functions import interp_list_mp
-from MEClass3.interpolation_functions import generate_param_list
+#from MEClass3.interpolation_functions import generate_param_list
 from MEClass3.interpolation_functions import generate_param_comment
 from MEClass3.interpolation_functions import format_fail_dict
 from MEClass3.io_functions import print_to_log
