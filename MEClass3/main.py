@@ -15,7 +15,7 @@ from MEClass3.cluster import exec_cluster, exec_cluster_help
 from MEClass3.plot_interp import exec_plot_interp, exec_plot_interp_help
 from MEClass3.plot_performance import exec_plot_performance, exec_plot_performance_help
 
-#from MEClass3.evaluation import exec_eval, exec_eval_help
+from MEClass3.pull_gene_list import exec_pull_gene_list, exec_pull_gene_list_help
 
 #from MEClass3.filter import exec_filter, exec_filter_help
 #from MEClass3.setup_expr import exec_setup_expr, exec_setup_expr_help
@@ -63,11 +63,11 @@ def setup_subcommands():
                                 help = "Train and run classifier",
                                 desc = "Trains classifier to predict expression changes using methylation signatures for each gene/enhancer/region"))
 
-#    subcommands.append( Subcommand( name="eval", 
-#                                function=exec_eval,
-#                                help_function=exec_eval_help,
-#                                help = "Evaluate classifier performance",
-#                                desc = "Evaluate classifier performance."))
+    subcommands.append( Subcommand( name="pull_gene_list", 
+                                function=exec_pull_gene_list,
+                                help_function=exec_pull_gene_list_help,
+                                help = "Pull gene list based on acc threshold",
+                                desc = "Pull gene list based on acc threshold."))
     
     subcommands.append( Subcommand( name="plot_performance", 
                                 function=exec_plot_performance,
