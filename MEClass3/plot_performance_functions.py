@@ -145,7 +145,7 @@ def plot_acc_rejectrate (results, outFile, args,version):
         lgd=plt.legend(bbox_to_anchor=(1.1, 1),loc=2)
     else:
         lgd=plt.legend(loc="best")
-    plt.tight_layout()
+    #plt.tight_layout()
     plt.savefig(outFile, bbox_extra_artists=(lgd,), bbox_inches='tight')
 
 def print_roc (results, args):
