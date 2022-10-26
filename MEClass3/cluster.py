@@ -18,6 +18,7 @@ from MEClass3.cluster_functions import subset_and_normalize_data
 from MEClass3.cluster_functions import print_individual_cluster_averages
 from MEClass3.cluster_functions import normalize_expression
 from MEClass3.cluster_functions import select_features
+from MEClass3.cluster_functions import select_cluster_features
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
@@ -61,12 +62,20 @@ def exec_cluster(args):
             merged_data.drop('clf_flag', axis=1, inplace=True)
         #merged_data.dropna()
         feat_cols = select_features(merged_data, args.anno_type, args.data_type)
+        if args.features == 'all':
+            feat_cols_cluster = feat_cols
+        else:
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args)
         if len(feat_cols) == 0:
             eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
             exit()
+        elif len(feat_cols_cluster) == 0:
+            eprint(f"could not find any features for clustering: {args.features}\nCheck --features and feature subsetting params in data files.\n")
+            exit()
         merged_data_vals = subset_and_normalize_data(merged_data, feat_cols)
         norm_Y = normalize_expression(merged_data['expr_value']) 
-        linkage = scipy.cluster.hierarchy.linkage(merged_data_vals,method=args.linkage_method,metric='euclidean')
+        #linkage = scipy.cluster.hierarchy.linkage(merged_data_vals,method=args.linkage_method,metric='euclidean')
+        linkage = scipy.cluster.hierarchy.linkage(merged_data_vals.loc[:,feat_cols_cluster],method=args.linkage_method,metric='euclidean')
         fcluster = scipy.cluster.hierarchy.fcluster(linkage,args.numClusters,criterion='maxclust')
         #cluster_tags = [float(1)/ct for ct in fcluster] 
         cluster_tags = [float(ct % 2) for ct in fcluster] 
@@ -80,12 +89,6 @@ def exec_cluster(args):
         
 def exec_cluster_help(parser):
     parser_required = parser.add_argument_group('required arguments')
-#    parser_required.add_argument('interp_files', metavar='interp_files', type=str, nargs='+',
-#        default=argparse.SUPPRESS,
-#        help='interpolation files for classification')
-#    parser_required.add_argument('-i', '--input_list', dest='input_list',
-#        default=argparse.SUPPRESS,
-#        required=True, help='Input list of sample names and file locations for pairings.')
     parser_required.add_argument('-p', '--pred_file', 
         default=argparse.SUPPRESS,
         required=True, help='Prediction file from classifiier.')
@@ -95,7 +98,7 @@ def exec_cluster_help(parser):
         default='intermediate_files', help='Path to directory with merged interpolation files from merge data step.')
     parser_general.add_argument('--anno_type', default="tss", 
         choices=["tss", "enh","all"],
-        help='region or gene annotation to use for clustering')
+        help='region or gene annotation to print for clustering')
     parser_general.add_argument('--data_type', default="mC", 
         choices=["mC", "hmC", "other", "all"],
         help='type of data to use for clustering. all uses all data from all annotations and overrides --anno_type')
@@ -106,29 +109,35 @@ def exec_cluster_help(parser):
     parser_heatmap.add_argument('--color_max_meth_diff',default=0.2,type=float,
         help="Sets color bar scale for heatmap.")
     parser_clustering = parser.add_argument_group('clustering arguments')
-    parser_clustering.add_argument('--features', default="tss",
-        choices=["tss", "enh"],
+    parser_clustering.add_argument('--features', default="all",
+        choices=["tss", "enh", "all"],
         help="Features to use for clustering.")
     parser_clustering.add_argument('--numClusters',default=3,type=int,
         help="number of clusters.")
     parser_clustering.add_argument('--linkage_method', default="complete", choices=["single", "complete", "average", "weighted", "ward", "median", "centroid"],
         help="linkage method for clustering. See scipy.cluster.hierarchy.linkage online documentation for more info.")
-    parser_clustering.add_argument('--upperBound',default=2500,type=int,
-        help="upperBound of window for clustering in number of features, in bp relative to TSS")
-    parser_clustering.add_argument('--lowerBound',default=-500,type=int,
-        help="lowerBound of window for clustering in number of features, in bp relative to TSS")
     parser_clustering.add_argument('--upperPredBound',default=1.0,type=float,
         help="upper prediction score bound for clustering.")
     parser_clustering.add_argument('--lowerPredBound',default=0.7,type=float,
         help="lower prediction score bound for clustering.")
+    parser_clustering.add_argument('--tss_upperBound',default=2500,type=int,
+        help="upperBound of window around tSS for clustering, in bp relative to TSS")
+    parser_clustering.add_argument('--tss_lowerBound',default=-500,type=int,
+        help="lowerBound of window around TSS for clustering, in bp relative to TSS")
+    parser_clustering.add_argument('--enh_upperBound',default=100,type=int,
+        help="upperBound of window around enhancer for clustering, in bp relative to enhancer")
+    parser_clustering.add_argument('--enh_lowerBound',default=-100,type=int,
+        help="lowerBound of window around ennhancer for clustering, in bp relative to enhancer")
+    parser_clustering.add_argument('--enh_tag', default='all',type=str,
+        help="comma separated list of which enhancers to use for clustering. Set to 'all' to use all of them.")
     parser_clusterplots = parser.add_argument_group('cluster line plot arguments')
     parser_clusterplots.add_argument('--confidence_interval',default=95, type=int,
         help="confidence interval [0,100] for aggregate cluster plots.")
-    parser_clusterplots.add_argument('--max_y_val',default=0.4, type=float,
+    parser_clusterplots.add_argument('--max_y_val', default=0.4, type=float,
         help="max y-value for plots.")
     parser_clusterplots.add_argument('--min_genes_per_cluster',default=10, type=int,
         help="min number of genes needed in a cluster to print it")
-    parser_clusterplots.add_argument('--min_cluster_purity',default=0.75, type=float,
+    parser_clusterplots.add_argument('--min_cluster_purity', default=0.75, type=float,
         help="min purity of the cluster to print it")
     parser_clusterplots.add_argument('--tight_layout', action='store_true',
         help="May help with layout of cluster plots if the plot does not fill the figure")

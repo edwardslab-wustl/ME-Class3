@@ -69,19 +69,17 @@ def cluster_plot_heatmap_old(df, norm_Y, linkage, cluster_tags, args):
     sns.set(font_scale=2)
     with recursion_depth(5000):
         sns.clustermap( df, row_colors=row_colors,col_cluster = False,
-                           figsize=(35,25),  method=args.linkage_method, row_linkage=linkage,
+                           figsize=(35,25), row_linkage=linkage,
                            cmap=meth_cmap, linewidths = 0,
                            xticklabels=True,yticklabels=False,
                            vmin = vmin, vmax = vmax,
                            dendrogram_ratio=(.08, .2))
-                           #xticklabels=False,yticklabels=False,
-    ##plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0) cg = sns.clustermap
+                           ##figsize=(35,25),  method=args.linkage_method, row_linkage=linkage,
     plt.title(title)
     plt.savefig(filename)
     plt.close()   
     return
 
-#def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, param_data_dict, args):
 def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, args):
     filename = args.out_base + ".meth.clustermap.png"
     title = "Delta Meth."
@@ -110,8 +108,6 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, args):
                            xticklabels=False,yticklabels=False,
                            vmin = vmin, vmax = vmax,
                            dendrogram_ratio=(.10, .2))
-                           #xticklabels=False,yticklabels=False,
-    ##plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0) cg = sns.clustermap
     plt.title(title, fontsize=fontsize)
     left_side = 585 / (fig_width * 100)
     right_side = 3464 / (fig_width * 100)
@@ -195,24 +191,6 @@ def add_enh_labels (plt, enh_labels, left_side, right_side, region_size, text_he
     #plt.figtext(md_pt - char_width_corr * len(anno_label) / 3500, text_height, anno_label, fontsize=fontsize)
     #plt.figtext(left_side - char_width_corr * len(str(region_size +1)) / 3500, text_height, str(-region_size), fontsize=fontsize)
     #plt.figtext(right_side - char_width_corr * len(str(region_size)) / 3500, text_height, str(region_size), fontsize=fontsize)
-        
-    #heatmap.gs.update(left=0.05, bottom=0.1)
-    #gs2 = matplotlib.gridspec.GridSpec(1,1, left=0.2, top=0.10)
-    #ax2 = heatmap.fig.add_subplot(gs2[0])
-    #region_size = 5000
-    #plt.plot([-region_size,region_size],[1,1],'k-',alpha=0.5)
-    #ax2.set_facecolor('white')
-    #ax2.get_yaxis().set_visible(False)
-    #ax2.get_xaxis().set_visible(True)
-    #ax2.set_xlim([-region_size,region_size])
-    #feat_label ='TSS'
-    #ax2.xaxis.set_tick_params(width=5, size=10)
-    #x_tick_minorLocator = MultipleLocator(1000)
-    #ax2.xaxis.set_minor_locator(x_tick_minorLocator)
-    #ax2.set_xticks((-region_size,0,region_size),(str(region_size),feat_label,str(region_size)))
-    #md_pt = 0
-    #plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
-    #ax2.set_ylim([-0.1,0.1])
 
 def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_dict, param_dict, args):    
     cluster_info = []
@@ -258,6 +236,37 @@ def select_features( df, anno_type, data_type):
         feat_tag = data_type + '-' + anno_type
         select_cols = [ x for x in df if x.startswith(feat_tag) ]
     return select_cols
+
+def select_cluster_features( df, param_data_dict, args ):
+    if args.features == 'tss':
+        up = args.tss_upperBound
+        dn = args.tss_lowerBound
+    elif args.features == 'enh':
+        up = args.enh_upperBound
+        dn = args.enh_lowerBound
+    select_cols = []
+    feat_tag = args.data_type + '-' + args.features
+    param_dict = dict(param_data_dict[feat_tag])
+    select_cols_tmp = [ x for x in df if x.startswith(feat_tag) ]
+    for feat in select_cols_tmp:
+        test_feat =''
+        if args.features == 'tss':
+            test_feat = feat
+        elif args.features == 'enh':
+            [enh_feat, enh_info] = feat.split('_', 1)
+            if args.enh_tag == 'all':
+                test_feat = enh_feat
+            elif ',' in args.enh_tag and enh_info in args.enh_tag.split(','):
+                test_feat = enh_feat
+            elif args.enh_tag == enh_info:
+                test_feat = enh_feat
+            else:
+                continue
+        if test_feat in param_dict and dn <= param_dict[test_feat] and param_dict[test_feat] <= up:
+                select_cols.append(feat)
+    return select_cols
+
+
 
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
