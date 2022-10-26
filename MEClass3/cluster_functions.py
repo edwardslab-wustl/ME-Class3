@@ -8,6 +8,7 @@ import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
+#import matplotlib.gridspec
 
 class recursion_depth:
 # from : https://www.codingem.com/python-maximum-recursion-depth/
@@ -51,7 +52,7 @@ def check_purity(Y):
         purity = -1
     return purity,direction
 
-def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, args):
+def cluster_plot_heatmap_old(df, norm_Y, linkage, cluster_tags, args):
     filename = args.out_base + ".meth.clustermap.png"
     title = "Delta Meth."
     meth_cmap = sns.diverging_palette(240,10,n=15,as_cmap=True)
@@ -79,6 +80,140 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, args):
     plt.savefig(filename)
     plt.close()   
     return
+
+#def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, param_data_dict, args):
+def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, args):
+    filename = args.out_base + ".meth.clustermap.png"
+    title = "Delta Meth."
+    meth_cmap = sns.diverging_palette(240,10,n=15,as_cmap=True)
+    cluster_cmap = plt.get_cmap("cool")
+    pred_cmap = plt.get_cmap("RdYlGn_r")
+    # idea is to add column color for samples
+    #sample_cmap = plt.get_cmap("gnuplot2")
+    #sample_tags = [float(1)/(s+1) for s in S]    
+    #row_colors = [sample_cmap(sample_tags),pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
+    row_colors = [pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
+    vmin = -args.color_max_meth_diff
+    vmax = args.color_max_meth_diff
+    #sns.set(style="white")
+    sns.set(font_scale=2)
+    fig_width = 35
+    fontsize=30
+    fontsize2=40
+    tick_height = 0.8
+    text_height = 0.82
+    anno_label_height = 0.86
+    with recursion_depth(5000):
+        sns.clustermap( df, row_colors=row_colors,col_cluster = False,
+                           figsize=(fig_width,25),  method=args.linkage_method, row_linkage=linkage,
+                           cmap=meth_cmap, linewidths = 0,
+                           xticklabels=False,yticklabels=False,
+                           vmin = vmin, vmax = vmax,
+                           dendrogram_ratio=(.10, .2))
+                           #xticklabels=False,yticklabels=False,
+    ##plt.setp(cg.ax_heatmap.yaxis.get_majorticklabels(), rotation=0) cg = sns.clustermap
+    plt.title(title, fontsize=fontsize)
+    left_side = 585 / (fig_width * 100)
+    right_side = 3464 / (fig_width * 100)
+    plt.figtext(left_side - 140 / (fig_width * 100), tick_height, "Expr.", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
+    plt.figtext(left_side - 60 / (fig_width * 100), tick_height, "Cluster", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
+    data_type = 'mC'
+    if args.anno_type == 'tss':
+        anno_id = data_type + '-' + args.anno_type
+        anno_label = 'TSS'
+        region_size = param_dict[anno_id].region_size
+        add_tss_labels(plt, anno_label, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2 )
+    elif args.anno_type == 'enh':
+        anno_id = data_type + '-' + args.anno_type
+        enh_labels = pull_enh_labels(df)
+        region_size = param_dict[anno_id].region_size
+        add_enh_labels(plt, enh_labels, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2 )
+    elif args.anno_type == 'all':
+        enh_labels = pull_enh_labels(df)
+        num_enh_regions = len(enh_labels)
+        enh_region_size = param_dict[data_type + '-' + 'enh'].region_size
+        tss_region_size = param_dict[data_type + '-' + 'tss'].region_size
+        enh_start = left_side + (right_side - left_side) * (2 * tss_region_size / (2 * tss_region_size + enh_region_size * num_enh_regions)) 
+        enh_start = enh_start - 27 / (fig_width * 100)
+        add_tss_labels(plt, 'TSS', left_side, enh_start, tss_region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False )
+        add_enh_labels(plt, enh_labels, enh_start, right_side, enh_region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=True )
+    plt.savefig(filename)
+    plt.close()   
+    exit()
+    return
+
+def pull_enh_labels(df):
+    result = []
+    for feat in df.columns:
+        if feat.split('-')[1].startswith('enh'):
+            y = feat.split('_', 1)[1]
+            if y not in result:
+                result.append(y) 
+    return result
+
+def add_tss_labels (plt, anno_label, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False):
+    label_rotation='horizontal'
+    if rotate:
+        label_rotation='vertical'
+    md_pt = (right_side - left_side ) / 2 + left_side
+    plt.figtext(md_pt, text_height, '0', fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
+    plt.figtext(left_side, text_height, str(-region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+    plt.figtext(right_side, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+    tick_start = left_side
+    tick_end = right_side
+    tick_step = (right_side - left_side) / 10
+    i = tick_start
+    while i <= tick_end:
+        plt.figtext(i, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
+        i += tick_step
+    return
+
+def add_enh_labels (plt, enh_labels, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False):
+    label_rotation='horizontal'
+    if rotate:
+        label_rotation='vertical'
+    num_regions = len(enh_labels)
+    center_start = left_side + 0.5 * (right_side - left_side) / num_regions
+    step_size = (right_side - left_side) / num_regions
+    for i in range(0,num_regions):
+        label = "0" 
+        anno_label = enh_labels[i]
+        x_position = center_start + step_size * i
+        plt.figtext(x_position, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
+        plt.figtext(x_position, text_height, label, fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+        plt.figtext(x_position, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
+        x_boundary = left_side + step_size * i
+        plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
+        plt.figtext(x_boundary, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+    x_boundary = left_side + step_size * num_regions
+    plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
+    plt.figtext(x_boundary, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+    return
+
+### OLD STUFF
+    #char_width_corr = 10
+    #plt.figtext(md_pt - char_width_corr * len(anno_label) / 3500, text_height, anno_label, fontsize=fontsize)
+    #plt.figtext(left_side - char_width_corr * len(str(region_size +1)) / 3500, text_height, str(-region_size), fontsize=fontsize)
+    #plt.figtext(right_side - char_width_corr * len(str(region_size)) / 3500, text_height, str(region_size), fontsize=fontsize)
+        
+    #heatmap.gs.update(left=0.05, bottom=0.1)
+    #gs2 = matplotlib.gridspec.GridSpec(1,1, left=0.2, top=0.10)
+    #ax2 = heatmap.fig.add_subplot(gs2[0])
+    #region_size = 5000
+    #plt.plot([-region_size,region_size],[1,1],'k-',alpha=0.5)
+    #ax2.set_facecolor('white')
+    #ax2.get_yaxis().set_visible(False)
+    #ax2.get_xaxis().set_visible(True)
+    #ax2.set_xlim([-region_size,region_size])
+    #feat_label ='TSS'
+    #ax2.xaxis.set_tick_params(width=5, size=10)
+    #x_tick_minorLocator = MultipleLocator(1000)
+    #ax2.xaxis.set_minor_locator(x_tick_minorLocator)
+    #ax2.set_xticks((-region_size,0,region_size),(str(region_size),feat_label,str(region_size)))
+    #md_pt = 0
+    #plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
+    #ax2.set_ylim([-0.1,0.1])
 
 def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_dict, param_dict, args):    
     cluster_info = []

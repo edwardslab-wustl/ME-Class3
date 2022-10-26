@@ -57,7 +57,8 @@ def exec_cluster(args):
             eprint(f"Can't find any interpolation data: {sample_file}!\nCheck file paths and names.\n")
             exit()
         merged_data = interp_data.merge(pred_data_filtered, on='gene_id-sample_name')
-        merged_data.drop('clf_flag', axis=1, inplace=True)
+        if 'clf_flag' in merged_data.columns:
+            merged_data.drop('clf_flag', axis=1, inplace=True)
         #merged_data.dropna()
         feat_cols = select_features(merged_data, args.anno_type, args.data_type)
         if len(feat_cols) == 0:
@@ -70,7 +71,8 @@ def exec_cluster(args):
         #cluster_tags = [float(1)/ct for ct in fcluster] 
         cluster_tags = [float(ct % 2) for ct in fcluster] 
         uniq_clusters = list(set(fcluster))
-        cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,args)
+        #cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,param_dict,param_data_dict,args)
+        cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,param_dict,args)
         cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,param_data_dict, param_dict, args)
         print_to_log(log_FH, "\n".join(cluster_info))
         return
