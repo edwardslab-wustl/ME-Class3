@@ -8,55 +8,26 @@ from sklearn.model_selection import KFold
 
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
+from MEClass3.io_functions import read_params_from_interp_2
 from MEClass3.sample import read_sample_file
+from MEClass3.classify_functions import read_interp_files
+from MEClass3.classify_functions import normalize_labels
+from MEClass3.classify_functions import plot_featureImportance
 
-def read_interp_files(file_list):
-    df = ''
-    for file in file_list:
-        if len(df) == 0:
-            df = pd.read_csv(file, comment='#')
-        else:
-            df_tmp = pd.read_csv(file, comment='#')
-            df_new = pd.concat([df, df_tmp], ignore_index=True)
-            df = df_new
-            del df_tmp
-            del df_new
-    #df.set_index( df.columns[0] )
-    return df
 
-def normalize_labels(df):
-    # Normalize up and down
-    expr_flag_value_count = df['expr_flag'].value_counts()
-    num_up = pd.Series(expr_flag_value_count)[1]
-    num_dn = pd.Series(expr_flag_value_count)[-1]
-    if num_up > num_dn:
-        idx = df.index[ (df['expr_flag'] == 1) ]
-        #df.at[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag'] = 0
-        df.loc[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag'] = 0
-        del idx
-    elif num_dn > num_up:
-        idx = df.index[ (df['expr_flag'] == -1) ]
-        #df.at[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag'] = 0
-        df.loc[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag'] = 0
-        del idx
-    return df
-    
 def exec_classify(args):
-    # Load data csv file
+    pair_list = read_sample_file(args.input_list)
     df = read_interp_files(args.interp_files)
 #    df = ( pd.read_csv(args.dfi_inp) ).set_index('gene_id-sample_name')
     df = df[~df.isin([np.nan, np.inf, -np.inf]).any(axis=1)]
-    pair_list = read_sample_file(args.input_list)
-    # List of sample names
-    #sample_names =  list( set( df['sample_name'].tolist() ) )
-    #Output info. This will store classifier performance
+    #set up columns to store classifier performance
     df['prob_dn'] = 0.0
     df['prob_up'] = 0.0
     df['expr_pred'] = np.nan
-    # Add train and test flag for classifier to use and mark all null
+    # Add column to store a train and test flag and mark all null
     df['clf_flag'] = 'null'
     df.set_index('gene_id-sample_name')
-    #feature_column_names = ( df.columns[pd.Series(df.columns).str.startswith('f')] ).tolist()
+    #set up dataframe for feature importances
     drop_col_list = ['gene_id-sample_name','sample_name','expr_value','expr_flag','prob_up','prob_dn','expr_pred','clf_flag','gene_id']
     feature_column_names = [ x for x in df.columns if x not in drop_col_list ]
     df_fi = pd.DataFrame(columns=feature_column_names)
@@ -104,7 +75,7 @@ def exec_classify(args):
                 df_kf_train.drop(df_kf_train.index, inplace=True)
                 df_kf_test.drop(df_kf_test.index, inplace=True)
                 del df_kf, df_kf_train, df_kf_test, clf
-    #===============================================
+        #===============================================
         else: # loso loop
             for sample_pair in pair_list:
                 #sample = sample_pair.name
@@ -215,8 +186,7 @@ def exec_classify(args):
                             df.loc[idx, 'prob_dn'] = y_test_prob[i][0]
                             df.loc[idx, 'prob_up'] = y_test_prob[i][1]
                 
-                    # Feature importance.
-                    #print(clf.feature_importances_)
+                    # Calculate feature importances
                     if args.featureImportance:
                         df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=feature_column_names))] )
                 
@@ -229,27 +199,31 @@ def exec_classify(args):
                 
                 df_loso.drop(df_loso.index, inplace=True)
                 del df_loso
-        #============================
-        # Final dataframe without feature column
+                
+        # Print final dataframe without feature columns
         df_out = df.copy()
         out_cols=['gene_id-sample_name','gene_id','sample_name','expr_value','expr_flag','prob_dn','prob_up','expr_pred']
-        #df_out.drop(['clf_flag'], inplace=True)
         df_out = df_out[ (df_out['expr_pred'].isnull()==False) ]
     #    df_out = df_out[ np.isnan(df_out['expr_pred']) == False ]    
-        #df_out = df_out.drop(df_out.columns[pd.Series(df_out.columns).str.startswith('f')] , axis=1)
         df_out[out_cols].to_csv(args.tag+'.RandomForestClassifier.csv', sep=',', index=False)
         
         # Feature importance output
         if args.featureImportance:
             df_fi.to_csv(args.tag+'.featureImportance.perFold.csv', sep=',', index=False)
-            dfi_items = [','.join(['feature','sum','mean'])]
-            for item in df_fi.columns:
-                #dfi_items.append( str(df_fi[item].sum())+'\t'+str(df_fi[item].mean())+'\n' )
-                dfi_items.append( ','.join([item,str(df_fi[item].sum()),str(df_fi[item].mean())]) )
-    
-            open(args.tag+'.featureImportance.mean.csv', 'w').write('\n'.join(dfi_items))
- 
- 
+            #dfi_items = [','.join(['feature','sum','mean'])]
+            feat_imp_data = [ [x, df_fi[x].sum(), df_fi[x].mean()] for x in df_fi.columns ]
+            feat_imp_df = pd.DataFrame(feat_imp_data, columns=['feature','sum','mean'])
+            feat_imp_df.to_csv(args.tag + '.featureImportance.mean.csv', index=False)
+            if not args.no_plot_featureImportance:
+                param_data_dict = dict()
+                param_dict = dict()
+                for interp_file in args.interp_files:
+                    param_data_dict, param_dict = read_params_from_interp_2(interp_file)
+                    continue
+                plot_featureImportance(feat_imp_df,param_dict,param_data_dict,args)
+    return
+
+
 def exec_classify_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('interp_files', metavar='interp_files', type=str, nargs='+',
@@ -258,17 +232,29 @@ def exec_classify_help(parser):
     parser_required.add_argument('-i', '--input_list', dest='input_list',
         default=argparse.SUPPRESS,
         required=True, help='Input list of sample names and file locations for pairings.')
-    #parser_required.add_argument('-dfi', action='store', dest='dfi_inp', required=True, help='Dataframe output from interpolation step')
-    parser.add_argument('--num_trees', type=int, default=5001, help='Number of trees for Random Forest Classifier')
-    parser.add_argument('-t', '--threads', type=int, default=8, help='Number of Processors for RF run')
-    parser.add_argument('--folds', type=int, default=10, help='Number of folds for genes in CVF')
-    parser.add_argument('--tag', default='classifier_results', help='Tag for Output Writing')
-    #parser.add_argument('--fsl', action='store', dest='fsl_inp', type=int, default=1, help='Feature Selection. 1: TSS; 2: TSS+RE')
-    parser.add_argument('--no_shuffle', action='store_true', default=False, help='Do no shuffle data during kfold division.')
-    #parser.add_argument('--ss', action='store_true', dest='ss', default=False, help='Single sample or not') 
-    parser.add_argument('--featureImportance', action='store_true', default=False, help='Compute feature importances') 
-    parser.add_argument('--ngnorm', action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
-    parser.add_argument('--logfile', action='store', dest='logfile',
+    parser_classifier = parser.add_argument_group('classifier arguments')
+    parser_classifier.add_argument('--num_trees',
+        type=int, default=5001, help='Number of trees for Random Forest Classifier')
+    parser_classifier.add_argument('-t', '--threads',
+        type=int, default=8, help='Number of Processors for RF run')
+    parser_classifier.add_argument('--folds',
+        type=int, default=10, help='Number of folds for gene level cross-fold validation')
+    parser_classifier.add_argument('--tag',
+        default='classifier_results', help='Tag which will start all output filenames.')
+    parser_classifier.add_argument('--no_shuffle',
+        action='store_true', default=False, help='Do no shuffle data during kfold division.')
+    parser_classifier.add_argument('--ngnorm',
+        action='store_false', dest='gnorm', default=True, help='Normalize gene count or not') 
+    parser_featureImportance = parser.add_argument_group('featureImportance arguments')
+    parser_featureImportance.add_argument('--featureImportance',
+        action='store_true', default=False, help='Compute feature importances') 
+    parser_featureImportance.add_argument('--no_plot_featureImportance',
+        action='store_true', default=False,
+        help='Do not plot feature importances. Umnused unless --featureImportance is set.')
+    parser_featureImportance.add_argument('--featureImportance_max_y', default=0, type=float,
+        help='max y-value for feature importance, set to 0 to auto-scale. Umnused unless --featureImportance is set.')
+    parser_general = parser.add_argument_group('general arguments')
+    parser_general.add_argument('--logfile', action='store', dest='logfile',
         default='classify.log', help='log file')
     #parser._action_groups.reverse()
     return(parser)
