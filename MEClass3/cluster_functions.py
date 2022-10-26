@@ -139,7 +139,6 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, args):
         add_enh_labels(plt, enh_labels, enh_start, right_side, enh_region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=True )
     plt.savefig(filename)
     plt.close()   
-    exit()
     return
 
 def pull_enh_labels(df):
