@@ -103,6 +103,8 @@ def exec_merge_data(args):
             #df_interp.to_csv(out_file, sep=',')
             if 'enh_loc-gene_id-sample_name' in df_interp.columns:
                 df_interp.drop(['enh_loc-gene_id-sample_name'], axis=1, inplace=True)
+            if 'enh_loc' in df_interp.columns:
+                df_interp.drop(['enh_loc'], axis=1, inplace=True)
             out_csv_data = df_interp.to_csv(None, sep=',')
             with open(out_file, 'w') as out_FH:
                 for header in header_list:
