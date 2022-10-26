@@ -99,7 +99,7 @@ def plot_interp(x, y, raw_x_data, raw_y_data, gene, data_type, anno_type, out_fi
         feat_label = anno_type
         x_tick_minorLocator = MultipleLocator(100)
         ax.xaxis.set_minor_locator(x_tick_minorLocator)
-    plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
+    plt.xticks((-param.region_size,0,param.region_size),(str(-param.region_size),feat_label,str(param.region_size)))
     plt.savefig(out_file, bbox_inches='tight')
     plt.close()
     return
