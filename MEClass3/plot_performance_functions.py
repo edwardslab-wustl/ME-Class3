@@ -4,9 +4,10 @@ import collections
 
 import numpy as np
 import sklearn.metrics
+import matplotlib as mpl
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.pylab as pylab
-import matplotlib as mpl
 
 
 class Sample:

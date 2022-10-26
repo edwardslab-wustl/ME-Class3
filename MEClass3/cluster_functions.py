@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib as mpl
+mpl.use('Agg')
 from matplotlib import pyplot as plt
 from matplotlib.ticker import MultipleLocator
 

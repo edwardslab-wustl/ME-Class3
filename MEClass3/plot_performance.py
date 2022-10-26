@@ -11,6 +11,7 @@ Created on June 8th 2017
 import copy
 
 import matplotlib as mpl
+mpl.use('Agg')
 import pandas as pd
 
 from MEClass3.io_functions import print_to_log
@@ -105,15 +106,15 @@ def exec_plot_performance_help(parser):
             title='Advanced Plotting Options')
     advanced_plot_group.add_argument('--acc_rejectrate_steps',
             help="Number of points to use in accuracy vs reject rate plot, 11 steps \
-                    would be points every 0.1, default=101",
+                    would be points every 0.1",
             type=int,
             default=101)
     advanced_plot_group.add_argument('--legendLoc',
-            help="location of legend for plots, default=best",
+            help="location of legend for plots",
             choices=["best","right"],
-            default="best")
+            default="right")
     advanced_plot_group.add_argument('--lineWidth',
-            help="Line width for plots, default=t.5",
+            help="Line width for plots",
             type=float,
             default=2.5)
     return parser

@@ -93,10 +93,10 @@ def exec_cluster_help(parser):
         default='intermediate_files', help='Path to directory with merged interpolation files from merge data step.')
     parser_general.add_argument('--anno_type', default="tss", 
         choices=["tss", "enh","all"],
-        help='region or gene annotation file')
+        help='region or gene annotation to use for clustering')
     parser_general.add_argument('--data_type', default="mC", 
         choices=["mC", "hmC", "other", "all"],
-        help='type of data. all uses all data from all annotations and overrides --anno_type')
+        help='type of data to use for clustering. all uses all data from all annotations and overrides --anno_type')
     parser_general.add_argument('--logfile', default='cluster.log', help='log file')
     #parser.add_argument('--cluster_data', default="both", choices=["meth_only", "hmC_only", "both"],
     #    help="which signatures/data to cluster based on. (default: both)")
