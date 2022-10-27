@@ -19,6 +19,7 @@ from MEClass3.cluster_functions import print_individual_cluster_averages
 from MEClass3.cluster_functions import normalize_expression
 from MEClass3.cluster_functions import select_features
 from MEClass3.cluster_functions import select_cluster_features
+from MEClass3.cluster_functions import check_features
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
@@ -26,9 +27,14 @@ from MEClass3.io_functions import read_params_from_interp_2
 
 #warnings.filterwarnings("ignore", category=UserWarning)
 
+
 def exec_cluster(args):
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
+        check_feat = check_features(args.anno_type, args.features)
+        if not check_feat:
+            eprint(f"invalid combination --anno_type, --features: {args.anno_type},{args.features}. --features must be the same or a subset of --anno_type.\n")
+            exit()
         pred_data = read_pred_file(args.pred_file)
         pred_data_filtered = pred_data[ \
             ((args.lowerPredBound <= pred_data['prob_up']) & (pred_data['prob_up'] <= args.upperPredBound)) | \
@@ -63,9 +69,11 @@ def exec_cluster(args):
         #merged_data.dropna()
         feat_cols = select_features(merged_data, args.anno_type, args.data_type)
         if args.features == 'all':
-            feat_cols_cluster = feat_cols
+            #feat_cols_cluster = feat_cols
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, 'tss', args)
+            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, 'enh', args))
         else:
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args)
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args.features, args)
         if len(feat_cols) == 0:
             eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
             exit()

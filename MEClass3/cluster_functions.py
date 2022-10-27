@@ -237,22 +237,22 @@ def select_features( df, anno_type, data_type):
         select_cols = [ x for x in df if x.startswith(feat_tag) ]
     return select_cols
 
-def select_cluster_features( df, param_data_dict, args ):
-    if args.features == 'tss':
+def select_cluster_features( df, param_data_dict, features, args ):
+    if features == 'tss':
         up = args.tss_upperBound
         dn = args.tss_lowerBound
-    elif args.features == 'enh':
+    elif features == 'enh':
         up = args.enh_upperBound
         dn = args.enh_lowerBound
     select_cols = []
-    feat_tag = args.data_type + '-' + args.features
+    feat_tag = args.data_type + '-' + features
     param_dict = dict(param_data_dict[feat_tag])
     select_cols_tmp = [ x for x in df if x.startswith(feat_tag) ]
     for feat in select_cols_tmp:
         test_feat =''
-        if args.features == 'tss':
+        if features == 'tss':
             test_feat = feat
-        elif args.features == 'enh':
+        elif features == 'enh':
             [enh_feat, enh_info] = feat.split('_', 1)
             if args.enh_tag == 'all':
                 test_feat = enh_feat
@@ -265,8 +265,6 @@ def select_cluster_features( df, param_data_dict, args ):
         if test_feat in param_dict and dn <= param_dict[test_feat] and param_dict[test_feat] <= up:
                 select_cols.append(feat)
     return select_cols
-
-
 
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
@@ -336,3 +334,13 @@ def replace_axis_labels(df, column):
         x_val = (i * bin_size) - x_shift
         new_df.loc[new_df[column] == x, column] = x_val
     return new_df
+
+def check_features(anno, feat):
+    return_flag = True
+    if anno == 'all':
+        return_flag = True
+    elif anno == feat:
+        return_flag = True
+    else:
+        return_flag = False
+    return return_flag
