@@ -37,12 +37,12 @@ def exec_merge_data(args):
                 df_interp = add_enh_interp(df_interp, interp_file)
                 header_list = add_interp_header(interp_file, header_list)
             if args.hmC_tss:
-                interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
-                print_to_log(log_FH, f"\tadding mhC tss interp data: " + interp_file + "\n")
+                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_tss_base + ".csv"
+                print_to_log(log_FH, f"\tadding hmC tss interp data: " + interp_file + "\n")
                 df_interp = add_tss_interp(df_interp, interp_file)
                 header_list = add_interp_header(interp_file, header_list)
             if args.hmC_enh:
-                interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
+                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_enh_base + ".csv"
                 print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
                 df_interp = add_enh_interp(df_interp, interp_file)
                 header_list = add_interp_header(interp_file, header_list)
@@ -143,13 +143,13 @@ def exec_merge_data_help(parser):
     parser.add_argument('-o', '--output_path',
         default='intermediate_files', help='Path to directory to store output files')
     parser.add_argument('--mC_tss', action='store_true', default=False, help='Use tss interpolation data')
-    parser.add_argument('--mC_tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
+    parser.add_argument('--mC_tss_base', type=str, default='_mC_tss_interp', help='Base part of tss interpolation file name')
     parser.add_argument('--mC_enh', action='store_true', default=False, help='Use enh interpolation data')
-    parser.add_argument('--mC_enh_base', type=str, default='_enh_interp', help='Base part of enh interpolation file name')
+    parser.add_argument('--mC_enh_base', type=str, default='_mC_enh_interp', help='Base part of enh interpolation file name')
     parser.add_argument('--hmC_tss', action='store_true', default=False, help='Use tss interpolation data')
-    parser.add_argument('--hmC_tss_base', type=str, default='_gene_interp', help='Base part of tss interpolation file name')
+    parser.add_argument('--hmC_tss_base', type=str, default='_hmC_tss_interp', help='Base part of tss interpolation file name')
     parser.add_argument('--hmC_enh', action='store_true', default=False, help='Use enh interpolation data')
-    parser.add_argument('--hmC_enh_base', type=str, default='_enh_interp', help='Base part of enh interpolation file name')
+    parser.add_argument('--hmC_enh_base', type=str, default='_hmC_enh_interp', help='Base part of enh interpolation file name')
     parser.add_argument('--floor_expr', type=bool, default=True, help='Floor expression values before taking fold change.')
     parser.add_argument('--expr_floor_val', type=float, default=5.0, help='Expression floor value')
     parser.add_argument('--diff_expr_flag', choices=['foldChange', 'log2'], default='foldChange',

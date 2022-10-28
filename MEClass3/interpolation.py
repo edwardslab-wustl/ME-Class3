@@ -16,25 +16,27 @@ from MEClass3.io_functions import read_anno_file
 from MEClass3.io_functions import eprint 
 from MEClass3.io_functions import read_bed_file
 from MEClass3.io_functions import format_args_to_print
+from MEClass3.io_functions import mk_output_dir
 from MEClass3.sample import read_sample_file
 
 
 def exec_interp(args):
-    anno_file = args.anno_file
-    anno_type = args.anno_type
-    out_header = generate_out_header(args.num_interp_points, anno_type, args.data_type)
-    pair_list = read_sample_file(args.input_list)
-    if args.sample:
-        sample_set_flag = False
-        for sample_pair in pair_list:
-            if args.sample == sample_pair.name:
-                pair_list = [ sample_pair ]
-                sample_set_flag = True
-        if not sample_set_flag:
-            eprint("Can't find sample name " + args.sample + " in pair list. Check pair list and sample name and rerun.")
-            exit()
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
+        mk_output_dir(args.output_path)
+        anno_file = args.anno_file
+        anno_type = args.anno_type
+        out_header = generate_out_header(args.num_interp_points, anno_type, args.data_type)
+        pair_list = read_sample_file(args.input_list)
+        if args.sample:
+            sample_set_flag = False
+            for sample_pair in pair_list:
+                if args.sample == sample_pair.name:
+                    pair_list = [ sample_pair ]
+                    sample_set_flag = True
+            if not sample_set_flag:
+                eprint("Can't find sample name " + args.sample + " in pair list. Check pair list and sample name and rerun.")
+                exit()
         anno_list_prefilter = read_anno_file(anno_file, anno_type)
         anno_list_postfilter =[]
         fail_text = 'regions'
@@ -48,19 +50,19 @@ def exec_interp(args):
                     anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
                 else:
                     anno_list_postfilter.append(gene)
-            out_file_suffix = '_gene_interp'
+            #out_file_suffix = '_gene_interp'
             fail_text = 'genes'
             #param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
             param_data = generate_param_comment(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
         elif anno_type == 'enh':
             anno_list_postfilter = anno_list_prefilter
-            out_file_suffix = '_enh_interp'
             fail_text = 'enhancers'
             #param_data = generate_param_list(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
             param_data = generate_param_comment(args.num_interp_points, args.refl_inp, args.data_type, anno_type)
         else:
             eprint("Can't recognize anno_type: " + anno_type + "\nCheck --anno_type specification in help.")
             exit()
+        out_file_suffix = f"_{args.data_type}_{args.anno_type}_interp"
         print_to_log(log_FH, format_fail_dict(anno_fail_dict, fail_text) + '\n\n')
         for sample_pair in pair_list:
             sample_id = sample_pair.name 
@@ -104,7 +106,7 @@ def exec_interp(args):
 def exec_interp_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-a','--anno_file', default=argparse.SUPPRESS, required=True, help='region or gene annotation file')
-    parser_required.add_argument('-t', dest='tag_inp', default=argparse.SUPPRESS, required=True, help='Tag for output')
+    #parser_required.add_argument('-t', dest='tag_inp', default=argparse.SUPPRESS, required=True, help='Tag for output')
     parser_required.add_argument('-i', '--input_list', default=argparse.SUPPRESS, required=True, help='List of sample pairs')
     parser_general = parser.add_argument_group('general arguments')
     parser_general.add_argument('--anno_type', default="tss", 

@@ -8,6 +8,7 @@ Created on Mon Dec 19 11:30:15 2016
 #import warnings
 import argparse
 from os.path import exists
+#from re import I
 
 import pandas as pd
 import scipy.cluster.hierarchy    
@@ -20,6 +21,7 @@ from MEClass3.cluster_functions import normalize_expression
 from MEClass3.cluster_functions import select_features
 from MEClass3.cluster_functions import select_cluster_features
 from MEClass3.cluster_functions import check_features
+from MEClass3.cluster_functions import pull_feature_list
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
@@ -43,6 +45,7 @@ def exec_cluster(args):
         found_data_flag = False
         param_data_dict = dict()
         param_dict = dict()
+        data_feature_list = pull_feature_list(args.features_data)
         for sample in pred_data_filtered['sample_name'].unique():
             sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv"
             if not exists(sample_file):
@@ -70,10 +73,10 @@ def exec_cluster(args):
         feat_cols = select_features(merged_data, args.anno_type, args.data_type)
         if args.features == 'all':
             #feat_cols_cluster = feat_cols
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, 'tss', args)
-            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, 'enh', args))
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, 'tss', args.features_data, args)
+            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, 'enh', args.features_data, args))
         else:
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args.features, args)
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args.features, args.features_data, args)
         if len(feat_cols) == 0:
             eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
             exit()
@@ -89,7 +92,9 @@ def exec_cluster(args):
         cluster_tags = [float(ct % 2) for ct in fcluster] 
         uniq_clusters = list(set(fcluster))
         #cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,param_dict,param_data_dict,args)
-        cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,param_dict,args)
+        for data_type in data_feature_list:
+            feat_cols_tmp = select_features(merged_data_vals, args.anno_type, data_type)
+            cluster_plot_heatmap(merged_data_vals.loc[:,feat_cols_tmp],norm_Y,linkage,cluster_tags,param_dict,data_type,args)
         cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,param_data_dict, param_dict, args)
         print_to_log(log_FH, "\n".join(cluster_info))
         return
@@ -120,6 +125,9 @@ def exec_cluster_help(parser):
     parser_clustering.add_argument('--features', default="all",
         choices=["tss", "enh", "all"],
         help="Features to use for clustering.")
+    parser_clustering.add_argument('--features_data', default="all",
+        choices=["mC", "hmC", "all"],
+        help="Data features to use for clustering.")
     parser_clustering.add_argument('--numClusters',default=3,type=int,
         help="number of clusters.")
     parser_clustering.add_argument('--linkage_method', default="complete", choices=["single", "complete", "average", "weighted", "ward", "median", "centroid"],

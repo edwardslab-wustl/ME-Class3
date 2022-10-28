@@ -15,7 +15,8 @@ def add_tss_interp(df_interp, file):
     if len(df_interp) == 0:
         df_merged = tss_interp
     else:
-        df_merged = pd.concat([df_interp, tss_interp], axis=1)
+        #df_merged = pd.concat([df_interp, tss_interp], axis=1)
+        df_merged = df_interp.merge(tss_interp, on='gene_id-sample_name')
     del tss_interp
     df_merged = df_merged.fillna(0)
     return df_merged

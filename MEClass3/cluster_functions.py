@@ -80,9 +80,9 @@ def cluster_plot_heatmap_old(df, norm_Y, linkage, cluster_tags, args):
     plt.close()   
     return
 
-def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, args):
-    filename = args.out_base + ".meth.clustermap.png"
-    title = "Delta Meth."
+def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_type, args):
+    filename = args.out_base + f".{data_type}.clustermap.png"
+    title = r'$\Delta$' + f"{data_type}"
     meth_cmap = sns.diverging_palette(240,10,n=15,as_cmap=True)
     cluster_cmap = plt.get_cmap("cool")
     pred_cmap = plt.get_cmap("RdYlGn_r")
@@ -196,6 +196,7 @@ def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_di
     cluster_info = []
     data_list = []
     anno_list = []
+    print_csv_flag = True
     if args.data_type == 'all':
         data_list = ['mC', 'hmC']
     else:
@@ -219,25 +220,38 @@ def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_di
                 if cluster_data.shape[0] >= args.min_genes_per_cluster and purity >= args.min_cluster_purity:
                     #cluster_labels = [l for i,l in enumerate(cluster_data['gene_id']) if i in idx]
         #            average_print_helper_meth_cpg(Xs,Cs,str(cluster),of_base,cluster_labels,purity,expression_direction,data_info,args)
+                    if print_csv_flag:
+                        outFile = (args.out_base+f".cluster_{cluster}.csv")
+                        keep_cols= ['gene_id-sample_name','gene_id','sample_name',
+                                    'expr_value','expr_flag','prob_dn','prob_up','expr_pred']
+                        cluster_data[keep_cols].to_csv(outFile, index=False)
                     average_print_helper_meth_cpg(cluster_data,str(cluster),purity,expression_direction,x_data,param_dict,anno_id,args)
-                    outFile = (args.out_base+".meth_cpg.cluster_%s"%(cluster)+".csv")
-                    keep_cols= ['gene_id-sample_name','gene_id','sample_name',
-                                'expr_value','expr_flag','prob_dn','prob_up','expr_pred']
-                    cluster_data[keep_cols].to_csv(outFile, index=False)
+            print_csv_flag = False
     return cluster_info
 
-def select_features( df, anno_type, data_type):
-    if data_type == 'all':
-        select_cols = [ x for x in df ]
-    elif anno_type == 'all':
-        feat_tag = data_type
+def select_features( df, anno_type, data_features):
+    data_feature_list = pull_feature_list(data_features)
+    final_col_list = []
+    for data_type in data_feature_list:
+        if anno_type == 'all':
+            feat_tag = data_type
+        else:
+            feat_tag = data_type + '-' + anno_type
         select_cols = [ x for x in df if x.startswith(feat_tag) ]
-    else:
-        feat_tag = data_type + '-' + anno_type
-        select_cols = [ x for x in df if x.startswith(feat_tag) ]
-    return select_cols
+        final_col_list.extend(select_cols)
+    return final_col_list
 
-def select_cluster_features( df, param_data_dict, features, args ):
+def pull_feature_list ( features ):
+    data_feature_list = []
+    if features == 'all':
+        data_feature_list.append('mC')
+        data_feature_list.append('hmC')
+    else:
+        data_feature_list = [features]
+    return data_feature_list
+
+def select_cluster_features( df, param_data_dict, features, data_features, args ):
+    data_feature_list = pull_feature_list(data_features)
     if features == 'tss':
         up = args.tss_upperBound
         dn = args.tss_lowerBound
@@ -245,25 +259,26 @@ def select_cluster_features( df, param_data_dict, features, args ):
         up = args.enh_upperBound
         dn = args.enh_lowerBound
     select_cols = []
-    feat_tag = args.data_type + '-' + features
-    param_dict = dict(param_data_dict[feat_tag])
-    select_cols_tmp = [ x for x in df if x.startswith(feat_tag) ]
-    for feat in select_cols_tmp:
-        test_feat =''
-        if features == 'tss':
-            test_feat = feat
-        elif features == 'enh':
-            [enh_feat, enh_info] = feat.split('_', 1)
-            if args.enh_tag == 'all':
-                test_feat = enh_feat
-            elif ',' in args.enh_tag and enh_info in args.enh_tag.split(','):
-                test_feat = enh_feat
-            elif args.enh_tag == enh_info:
-                test_feat = enh_feat
-            else:
-                continue
-        if test_feat in param_dict and dn <= param_dict[test_feat] and param_dict[test_feat] <= up:
-                select_cols.append(feat)
+    for data_type in data_feature_list:
+        feat_tag = data_type + '-' + features
+        param_dict = dict(param_data_dict[feat_tag])
+        select_cols_tmp = [ x for x in df if x.startswith(feat_tag) ]
+        for feat in select_cols_tmp:
+            test_feat =''
+            if features == 'tss':
+                test_feat = feat
+            elif features == 'enh':
+                [enh_feat, enh_info] = feat.split('_', 1)
+                if args.enh_tag == 'all':
+                    test_feat = enh_feat
+                elif ',' in args.enh_tag and enh_info in args.enh_tag.split(','):
+                    test_feat = enh_feat
+                elif args.enh_tag == enh_info:
+                    test_feat = enh_feat
+                else:
+                    continue
+            if test_feat in param_dict and dn <= param_dict[test_feat] and param_dict[test_feat] <= up:
+                    select_cols.append(feat)
     return select_cols
 
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
@@ -320,7 +335,7 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
     if args.tight_layout:
         plt.tight_layout()
-    plot_file = args.out_base + f".meth_cpg.cluster_{cluster}.{data_type}.{anno_type}.png"
+    plot_file = args.out_base + f".cluster_{cluster}.{data_type}.{anno_type}.png"
     plt.savefig(plot_file, bbox_inches='tight')
     plt.close()
     return
