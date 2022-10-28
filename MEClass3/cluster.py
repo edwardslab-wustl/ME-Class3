@@ -136,13 +136,13 @@ def exec_cluster_help(parser):
         help="upper prediction score bound for clustering.")
     parser_clustering.add_argument('--lowerPredBound',default=0.7,type=float,
         help="lower prediction score bound for clustering.")
-    parser_clustering.add_argument('--tss_upperBound',default=2500,type=int,
+    parser_clustering.add_argument('--tss_upperBound',default=5000,type=int,
         help="upperBound of window around tSS for clustering, in bp relative to TSS")
-    parser_clustering.add_argument('--tss_lowerBound',default=-500,type=int,
+    parser_clustering.add_argument('--tss_lowerBound',default=-5000,type=int,
         help="lowerBound of window around TSS for clustering, in bp relative to TSS")
-    parser_clustering.add_argument('--enh_upperBound',default=100,type=int,
+    parser_clustering.add_argument('--enh_upperBound',default=500,type=int,
         help="upperBound of window around enhancer for clustering, in bp relative to enhancer")
-    parser_clustering.add_argument('--enh_lowerBound',default=-100,type=int,
+    parser_clustering.add_argument('--enh_lowerBound',default=-500,type=int,
         help="lowerBound of window around ennhancer for clustering, in bp relative to enhancer")
     parser_clustering.add_argument('--enh_tag', default='all',type=str,
         help="comma separated list of which enhancers to use for clustering. Set to 'all' to use all of them.")
