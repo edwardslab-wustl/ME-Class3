@@ -115,7 +115,6 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
     plt.figtext(left_side - 140 / (fig_width * 100), tick_height, "Expr.", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
     plt.figtext(left_side - 60 / (fig_width * 100), tick_height, "Cluster", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
     #data_type = 'mC'
-    x_boundaries = []
     x_labels = defaultdict(list)
     if args.anno_type == 'tss':
         anno_id = data_type + '-' + args.anno_type
@@ -124,7 +123,7 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         right_label = param_dict[anno_id].right_label()
         #region_size = param_dict[anno_id].size()
         #region_size = param_dict[anno_id].region_size
-        x_boundaries, x_labels = add_tss_labels(x_boundaries, x_labels, left_side, right_side, left_label, right_label) 
+        x_labels = add_tss_labels(x_labels, left_side, right_side, left_label, right_label) 
         add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.anno_type == 'enh':
         anno_id = data_type + '-' + args.anno_type
@@ -133,7 +132,7 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         right_label = param_dict[anno_id].right_label()
         #region_size = param_dict[anno_id].size()
         #region_size = param_dict[anno_id].region_size
-        x_boundaries, x_labels = add_enh_labels(x_boundaries, x_labels, enh_labels, left_side, right_side, left_label, right_label )
+        x_labels = add_enh_labels(x_labels, enh_labels, left_side, right_side, left_label, right_label )
         add_cat_labels(plt, enh_labels, left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.anno_type == 'all':
         num_tss_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'tss')])
@@ -151,13 +150,13 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         #enh_start = left_side + (right_side - left_side) * (tss_region_size / (tss_region_size + enh_region_size * num_enh_regions)) 
         enh_start = left_side + (right_side - left_side) * (num_tss_feat / (num_tss_feat + num_enh_feat)) 
         #enh_start = enh_start - 27 / (fig_width * 100)
-        x_boundaries, x_labels = add_tss_labels(x_boundaries, x_labels, left_side, enh_start, tss_left_label, tss_right_label) 
-        x_boundaries, x_labels = add_enh_labels(x_boundaries, x_labels, enh_labels, enh_start, right_side, enh_left_label, enh_right_label )
+        x_labels = add_tss_labels(x_labels, left_side, enh_start, tss_left_label, tss_right_label) 
+        x_labels = add_enh_labels(x_labels, enh_labels, enh_start, right_side, enh_left_label, enh_right_label )
         add_cat_labels(plt, enh_labels, enh_start, right_side, anno_label_height, fontsize2, rotate=True )
         add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
-    for i,x_boundary in enumerate(x_boundaries):
+    for x_boundary,label_list in x_labels.items():
         plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
-        plt.figtext(x_boundary, text_height, ",".join(x_labels[x_boundary]), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
+        plt.figtext(x_boundary, text_height, ",".join(label_list), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
     plt.savefig(filename)
     plt.close()   
     return
@@ -176,17 +175,14 @@ def pull_enh_labels(df):
 #    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
 #    return
 
-def add_tss_labels (boundaries, labels, left_side, right_side, left_label, right_label):
+def add_tss_labels (labels, left_side, right_side, left_label, right_label):
     if int(left_label) < 0 and 0 < int(right_label):
         zero_label_scale_factor = -float(left_label) / (float(right_label) - float(left_label))
         zero_label_coord = left_side + zero_label_scale_factor * (right_side - left_side)
-        boundaries.append(zero_label_coord)
         labels = add_label(labels,"0", zero_label_coord)
-    boundaries.append(left_side)
-    boundaries.append(right_side)
     labels = add_label(labels,left_label, left_side)
     labels = add_label(labels,right_label, right_side)
-    return boundaries, labels
+    return labels
 
 def add_label(dict, label, key):
     if key in dict:
@@ -208,22 +204,19 @@ def add_cat_labels (plt, enh_labels, left_side, right_side, anno_label_height, f
         plt.figtext(x_position, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
     return
         
-def add_enh_labels (boundaries, labels, enh_labels, left_side, right_side, left_label, right_label):
+def add_enh_labels (labels, enh_labels, left_side, right_side, left_label, right_label):
     num_regions = len(enh_labels)
     #center_start = left_side + 0.5 * (right_side - left_side) / num_regions
     step_size = (right_side - left_side) / num_regions
     for i in range(0,num_regions):
         coord = left_side + step_size * i
-        boundaries.append(coord)
         labels = add_label(labels,left_label, coord)
         coord2 = coord + step_size
         labels = add_label(labels,right_label, coord2)
         if left_label < 0 and 0 < right_label:
             center =  coord + step_size * -left_label / (right_label - left_label)
-            boundaries.append(center)
             labels = add_label(labels,"0", center)
-    boundaries.append(coord2)
-    return boundaries, labels
+    return labels
 
 ### OLD STUFF
     #char_width_corr = 10
