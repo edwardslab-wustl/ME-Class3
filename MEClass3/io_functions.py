@@ -12,6 +12,30 @@ class Param:
     anno_type: str
     region_size: int
     num_pts: str
+    lowerBound: int = 0
+    upperBound: int = 0
+    locationList: str = ''
+    
+    def size(self) -> int:
+        size = 2 * self.region_size 
+        if self.lowerBound !=0 or self.upperBound !=0:
+            size = self.upperBound - self.lowerBound
+        return size
+    
+    def left_label(self) -> str:
+        if self.lowerBound !=0 or self.upperBound !=0:
+            left_label = self.lowerBound
+        else:
+            left_label = -self.region_size
+        return left_label
+    
+    def right_label(self) -> str:
+        if self.lowerBound !=0 or self.upperBound !=0:
+            right_label = self.upperBound
+        else:
+            right_label = self.region_size
+        return right_label
+        
 
 @dataclass(frozen=True)
 class GeneAnno:
@@ -131,8 +155,24 @@ def read_params_from_interp_2(file):
         for line in FH:
             if line.startswith('#'):
                 (comment, info, data) = line.strip().split()
-                (anno_type,region_size,num_pts) = info.split(':')[1].split(',')
-                param = Param(anno_type, int(region_size), int(num_pts))
+                #(anno_type,region_size,num_pts) = info.split(':')[1].split(',')
+                info_list = info.split(':')[1].split(',')
+                anno_type = info_list[0]
+                region_size = int(info_list[1])
+                num_pts = int(info_list[2])
+                param = ''
+                if len(info_list) > 3:
+                    region_start = int(info_list[3])
+                    region_end = int(info_list[4])
+                    enh_list = []
+                    if len(info_list) > 5:
+                        for i in range(5, len(info_list)):
+                            enh_list.append(info_list[i])
+                        param = Param(anno_type, region_size, num_pts, region_start, region_end, ','.join(enh_list))
+                    else:
+                        param = Param(anno_type, region_size, num_pts, region_start, region_end)
+                else:
+                    param = Param(anno_type, region_size, num_pts)
                 data_list = data.split(':')[1].split(';')
                 data_pos_list = [ [x.split(',')[0],int(x.split(',')[1])] for x in data_list if len(x) > 0]
                 if anno_type in param_result:

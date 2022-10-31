@@ -250,9 +250,9 @@ def exec_classify_help(parser):
         action='store_true', default=False, help='Compute feature importances') 
     parser_featureImportance.add_argument('--no_plot_featureImportance',
         action='store_true', default=False,
-        help='Do not plot feature importances. Umnused unless --featureImportance is set.')
+        help='Do not plot feature importances. Unused unless --featureImportance is set.')
     parser_featureImportance.add_argument('--featureImportance_max_y', default=0, type=float,
-        help='max y-value for feature importance, set to 0 to auto-scale. Umnused unless --featureImportance is set.')
+        help='max y-value for feature importance, set to 0 to auto-scale. Unused unless --featureImportance is set.')
     parser_general = parser.add_argument_group('general arguments')
     parser_general.add_argument('--logfile', action='store', dest='logfile',
         default='classify.log', help='log file')

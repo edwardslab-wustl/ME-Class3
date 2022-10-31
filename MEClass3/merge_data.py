@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from MEClass3.sample import read_sample_file
-from MEClass3.io_functions import format_args_to_print
+from MEClass3.io_functions import format_args_to_print 
 from MEClass3.io_functions import mk_output_dir
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint
@@ -29,23 +29,23 @@ def exec_merge_data(args):
             if args.mC_tss:
                 interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
                 print_to_log(log_FH, f"\tadding mC tss interp data: " + interp_file + "\n")
-                df_interp = add_tss_interp(df_interp, interp_file)
-                header_list = add_interp_header(interp_file, header_list)
+                df_interp = add_tss_interp(df_interp, interp_file, 'mC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
             if args.mC_enh:
                 interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
                 print_to_log(log_FH, "\tadding mC enh interp data: " + interp_file + "\n")
-                df_interp = add_enh_interp(df_interp, interp_file)
-                header_list = add_interp_header(interp_file, header_list)
+                df_interp = add_enh_interp(df_interp, interp_file, 'mC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
             if args.hmC_tss:
                 interp_file = args.file_path + "/" + sample_pair.name + args.hmC_tss_base + ".csv"
                 print_to_log(log_FH, f"\tadding hmC tss interp data: " + interp_file + "\n")
-                df_interp = add_tss_interp(df_interp, interp_file)
-                header_list = add_interp_header(interp_file, header_list)
+                df_interp = add_tss_interp(df_interp, interp_file, 'hmC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
             if args.hmC_enh:
                 interp_file = args.file_path + "/" + sample_pair.name + args.hmC_enh_base + ".csv"
                 print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
-                df_interp = add_enh_interp(df_interp, interp_file)
-                header_list = add_interp_header(interp_file, header_list)
+                df_interp = add_enh_interp(df_interp, interp_file, 'hmC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
             df_interp['gene_id'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[0])
             df_interp['sample_name'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[1])    
             df_interp = df_interp.set_index('gene_id-sample_name')
@@ -138,24 +138,37 @@ def exec_merge_data_help(parser):
     parser_required.add_argument('-e', '--expr',
         default=argparse.SUPPRESS,
         required=True, help='Name of expression file')
-    parser.add_argument('-p', '--file_path',
+    parser_data_select = parser.add_argument_group('data selection arguments')
+    parser_data_select.add_argument('--mC_tss', action='store_true', default=False, help='Use tss interpolation data')
+    parser_data_select.add_argument('--mC_enh', action='store_true', default=False, help='Use enh interpolation data')
+    parser_data_select.add_argument('--hmC_tss', action='store_true', default=False, help='Use tss interpolation data')
+    parser_data_select.add_argument('--hmC_enh', action='store_true', default=False, help='Use enh interpolation data')
+    parser_data_select.add_argument('--tss_upperBound',default=5000,type=int,
+        help="Extracts only features found  between lowerBound and upperBound of window around TSS, in bp relative to TSS")
+    parser_data_select.add_argument('--tss_lowerBound',default=-5000,type=int,
+        help="Extracts only features found  between lowerBound and upperBound of window around TSS, in bp relative to TSS")
+    parser_data_select.add_argument('--enh_upperBound',default=500,type=int,
+        help="Extracts only features found between lowerBound and upperBound of window around enhancer, in bp relative to enhancer")
+    parser_data_select.add_argument('--enh_lowerBound',default=-500,type=int,
+        help="Extracts only features found between lowerBound and upperBound of window around enhancer, in bp relative to enhancer")
+    parser_data_select.add_argument('--enh_tag', default='all',type=str,
+        help="Comma separated list of which enhancers to use. Set to 'all' to use all of them.")
+    parser_expr = parser.add_argument_group('expression filtering arguments')
+    parser_expr.add_argument('--floor_expr', type=bool, default=True, help='Floor expression values before taking fold change.')
+    parser_expr.add_argument('--expr_floor_val', type=float, default=5.0, help='Expression floor value')
+    parser_expr.add_argument('--diff_expr_flag', choices=['foldChange', 'log2'], default='foldChange',
+        help='Method for differential expression. foldChange is +(e1/e2) or -(e2/e1). log2 is log2(e2/e1). e2 = expression value 2 and e1 = expression value 1.')
+    parser_expr.add_argument('--expr_cutoff', type=float, default=2,
+        help='Expression fold change cutoff to use for class labels. Assign (>= expr_cutoff) -> +1 and (<= expr_cutoff) -> -1. we recommend setting this to 1 if using --diff_expr_flag=log2. Class is ')
+    parser_data_loc = parser.add_argument_group('data location arguments')
+    parser_data_loc.add_argument('-p', '--file_path',
         default='intermediate_files', help='Path to directory with interpolation files')
     parser.add_argument('-o', '--output_path',
         default='intermediate_files', help='Path to directory to store output files')
-    parser.add_argument('--mC_tss', action='store_true', default=False, help='Use tss interpolation data')
     parser.add_argument('--mC_tss_base', type=str, default='_mC_tss_interp', help='Base part of tss interpolation file name')
-    parser.add_argument('--mC_enh', action='store_true', default=False, help='Use enh interpolation data')
-    parser.add_argument('--mC_enh_base', type=str, default='_mC_enh_interp', help='Base part of enh interpolation file name')
-    parser.add_argument('--hmC_tss', action='store_true', default=False, help='Use tss interpolation data')
-    parser.add_argument('--hmC_tss_base', type=str, default='_hmC_tss_interp', help='Base part of tss interpolation file name')
-    parser.add_argument('--hmC_enh', action='store_true', default=False, help='Use enh interpolation data')
-    parser.add_argument('--hmC_enh_base', type=str, default='_hmC_enh_interp', help='Base part of enh interpolation file name')
-    parser.add_argument('--floor_expr', type=bool, default=True, help='Floor expression values before taking fold change.')
-    parser.add_argument('--expr_floor_val', type=float, default=5.0, help='Expression floor value')
-    parser.add_argument('--diff_expr_flag', choices=['foldChange', 'log2'], default='foldChange',
-        help='Method for differential expression. foldChange is +(e1/e2) or -(e2/e1). log2 is log2(e2/e1). e2 = expression value 2 and e1 = expression value 1.')
-    parser.add_argument('--expr_cutoff', type=float, default=2,
-        help='Expression fold change cutoff to use for class labels. Assign (>= expr_cutoff) -> +1 and (<= expr_cutoff) -> -1. we recommend setting this to 1 if using --diff_expr_flag=log2. Class is ')
+    parser_data_loc.add_argument('--mC_enh_base', type=str, default='_mC_enh_interp', help='Base part of enh interpolation file name')
+    parser_data_loc.add_argument('--hmC_tss_base', type=str, default='_hmC_tss_interp', help='Base part of tss interpolation file name')
+    parser_data_loc.add_argument('--hmC_enh_base', type=str, default='_hmC_enh_interp', help='Base part of enh interpolation file name')
     parser.add_argument('--print_only_samples_with_labels', action='store_true', default=False,
         help='Print only samples that meet the expression cutoffs and are given labels.')
     parser.add_argument('--logfile', action='store', dest='logfile',

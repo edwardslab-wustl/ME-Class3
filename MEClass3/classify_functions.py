@@ -9,6 +9,7 @@ from matplotlib.ticker import MultipleLocator
 
 
 from MEClass3.cluster_functions import select_features
+from MEClass3.cluster_functions import setup_x_axis
 
 
 def read_interp_files(file_list):
@@ -51,7 +52,6 @@ def plot_featureImportance(data, param_dict, param_data_dict, args):
         data = data_orig.copy(deep=True)
         param = param_dict[ anno_id ]
         [data_type,anno_type] = anno_id.split('-')
-        x_range = [-param.region_size,param.region_size]
         data.set_index('feature')
         data_T = data.transpose(copy=True)
         data_T.columns = data_T.iloc[0]
@@ -75,36 +75,15 @@ def plot_featureImportance(data, param_dict, param_data_dict, args):
                             y='value',
                             hue='hue',
                             legend=legend )
-        if anno_type == 'tss':
-            ax.set_xlabel("Distance to TSS (bp)")
-        elif anno_type == 'enh':
-            ax.set_xlabel("Distance to Enhancer (bp)")
-            plt.legend(loc='right', title='',bbox_to_anchor=(1.4,0.5),handlelength=1,handletextpad=0.5,frameon=False)
-        else:
-            ax.set_xlabel("Relative Position (bp)")
-        plt.ylabel('Feature Importance')
         md_pt = 0
         plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
+        plt.ylabel('Feature Importance')
         if args.featureImportance_max_y > 0:
             max_y = args.featureImportance_max_y
         else:
             max_y = 1.1 * y_data_m['value'].max()
         plt.ylim([0,max_y])
-        #plt.yticks(np.arange(-args.max_y_val, args.max_y_val*1.05, step=0.2))
-        plt.xlim(x_range)
-        if anno_type == 'tss':
-            feat_label = "TSS"
-            x_tick_minorLocator = MultipleLocator(1000)
-            ax.xaxis.set_minor_locator(x_tick_minorLocator)
-        elif anno_type == 'enh':
-            feat_label = "Enhancer"
-            x_tick_minorLocator = MultipleLocator(100)
-            ax.xaxis.set_minor_locator(x_tick_minorLocator)
-        else:
-            feat_label = anno_type
-            x_tick_minorLocator = MultipleLocator(100)
-            ax.xaxis.set_minor_locator(x_tick_minorLocator)
-        plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
+        setup_x_axis(plt, ax, param, anno_type, args)
         #if args.tight_layout:
         #    plt.tight_layout()
         plot_file = args.tag + f".featureImportance.{data_type}.{anno_type}.png"

@@ -73,10 +73,10 @@ def exec_cluster(args):
         feat_cols = select_features(merged_data, args.anno_type, args.data_type)
         if args.features == 'all':
             #feat_cols_cluster = feat_cols
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, 'tss', args.features_data, args)
-            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, 'enh', args.features_data, args))
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, 'tss', args.features_data, args)
+            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, param_dict, 'enh', args.features_data, args))
         else:
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, args.features, args.features_data, args)
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, args.features, args.features_data, args)
         if len(feat_cols) == 0:
             eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
             exit()

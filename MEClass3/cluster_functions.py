@@ -1,4 +1,5 @@
 import sys
+from collections import defaultdict
 
 import sklearn.preprocessing 
 import numpy as np
@@ -113,26 +114,50 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
     right_side = 3464 / (fig_width * 100)
     plt.figtext(left_side - 140 / (fig_width * 100), tick_height, "Expr.", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
     plt.figtext(left_side - 60 / (fig_width * 100), tick_height, "Cluster", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
-    data_type = 'mC'
+    #data_type = 'mC'
+    x_boundaries = []
+    x_labels = defaultdict(list)
     if args.anno_type == 'tss':
         anno_id = data_type + '-' + args.anno_type
         anno_label = 'TSS'
-        region_size = param_dict[anno_id].region_size
-        add_tss_labels(plt, anno_label, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2 )
+        left_label = param_dict[anno_id].left_label()
+        right_label = param_dict[anno_id].right_label()
+        #region_size = param_dict[anno_id].size()
+        #region_size = param_dict[anno_id].region_size
+        x_boundaries, x_labels = add_tss_labels(x_boundaries, x_labels, left_side, right_side, left_label, right_label) 
+        add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.anno_type == 'enh':
         anno_id = data_type + '-' + args.anno_type
         enh_labels = pull_enh_labels(df)
-        region_size = param_dict[anno_id].region_size
-        add_enh_labels(plt, enh_labels, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2 )
+        left_label = param_dict[anno_id].left_label()
+        right_label = param_dict[anno_id].right_label()
+        #region_size = param_dict[anno_id].size()
+        #region_size = param_dict[anno_id].region_size
+        x_boundaries, x_labels = add_enh_labels(x_boundaries, x_labels, enh_labels, left_side, right_side, left_label, right_label )
+        add_cat_labels(plt, enh_labels, left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.anno_type == 'all':
+        num_tss_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'tss')])
+        num_enh_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'enh')])
         enh_labels = pull_enh_labels(df)
-        num_enh_regions = len(enh_labels)
-        enh_region_size = param_dict[data_type + '-' + 'enh'].region_size
-        tss_region_size = param_dict[data_type + '-' + 'tss'].region_size
-        enh_start = left_side + (right_side - left_side) * (2 * tss_region_size / (2 * tss_region_size + enh_region_size * num_enh_regions)) 
-        enh_start = enh_start - 27 / (fig_width * 100)
-        add_tss_labels(plt, 'TSS', left_side, enh_start, tss_region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False )
-        add_enh_labels(plt, enh_labels, enh_start, right_side, enh_region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=True )
+        #num_enh_regions = len(enh_labels)
+        #enh_region_size = param_dict[data_type + '-' + 'enh'].region_size
+        #tss_region_size = param_dict[data_type + '-' + 'tss'].region_size
+        #enh_region_size = param_dict[data_type + '-' + 'enh'].size()
+        enh_left_label = param_dict[data_type + '-' + 'enh'].left_label()
+        enh_right_label = param_dict[data_type + '-' + 'enh'].right_label()
+        #tss_region_size = param_dict[data_type + '-' + 'tss'].size()
+        tss_left_label = param_dict[data_type + '-' + 'tss'].left_label()
+        tss_right_label = param_dict[data_type + '-' + 'tss'].right_label()
+        #enh_start = left_side + (right_side - left_side) * (tss_region_size / (tss_region_size + enh_region_size * num_enh_regions)) 
+        enh_start = left_side + (right_side - left_side) * (num_tss_feat / (num_tss_feat + num_enh_feat)) 
+        #enh_start = enh_start - 27 / (fig_width * 100)
+        x_boundaries, x_labels = add_tss_labels(x_boundaries, x_labels, left_side, enh_start, tss_left_label, tss_right_label) 
+        x_boundaries, x_labels = add_enh_labels(x_boundaries, x_labels, enh_labels, enh_start, right_side, enh_left_label, enh_right_label )
+        add_cat_labels(plt, enh_labels, enh_start, right_side, anno_label_height, fontsize2, rotate=True )
+        add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
+    for i,x_boundary in enumerate(x_boundaries):
+        plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
+        plt.figtext(x_boundary, text_height, ",".join(x_labels[x_boundary]), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
     plt.savefig(filename)
     plt.close()   
     return
@@ -146,25 +171,31 @@ def pull_enh_labels(df):
                 result.append(y) 
     return result
 
-def add_tss_labels (plt, anno_label, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False):
-    label_rotation='horizontal'
-    if rotate:
-        label_rotation='vertical'
-    md_pt = (right_side - left_side ) / 2 + left_side
-    plt.figtext(md_pt, text_height, '0', fontsize=fontsize, horizontalalignment='center', rotation='vertical')
-    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
-    plt.figtext(left_side, text_height, str(-region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
-    plt.figtext(right_side, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
-    tick_start = left_side
-    tick_end = right_side
-    tick_step = (right_side - left_side) / 10
-    i = tick_start
-    while i <= tick_end:
-        plt.figtext(i, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
-        i += tick_step
-    return
+#def add_tss_cat_label (plt, left_side, right_side, anno_label, anno_label_height, fontsize2, label_rotation=False):
+#    md_pt = (right_side - left_side ) / 2 + left_side
+#    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
+#    return
 
-def add_enh_labels (plt, enh_labels, left_side, right_side, region_size, text_height, anno_label_height, tick_height, fontsize, fontsize2, rotate=False):
+def add_tss_labels (boundaries, labels, left_side, right_side, left_label, right_label):
+    if int(left_label) < 0 and 0 < int(right_label):
+        zero_label_scale_factor = -float(left_label) / (float(right_label) - float(left_label))
+        zero_label_coord = left_side + zero_label_scale_factor * (right_side - left_side)
+        boundaries.append(zero_label_coord)
+        labels = add_label(labels,"0", zero_label_coord)
+    boundaries.append(left_side)
+    boundaries.append(right_side)
+    labels = add_label(labels,left_label, left_side)
+    labels = add_label(labels,right_label, right_side)
+    return boundaries, labels
+
+def add_label(dict, label, key):
+    if key in dict:
+        dict[key].insert(0, str(label))
+    else:
+        dict[key] = [str(label)]
+    return dict
+
+def add_cat_labels (plt, enh_labels, left_side, right_side, anno_label_height, fontsize2, rotate=False):
     label_rotation='horizontal'
     if rotate:
         label_rotation='vertical'
@@ -172,19 +203,27 @@ def add_enh_labels (plt, enh_labels, left_side, right_side, region_size, text_he
     center_start = left_side + 0.5 * (right_side - left_side) / num_regions
     step_size = (right_side - left_side) / num_regions
     for i in range(0,num_regions):
-        label = "0" 
         anno_label = enh_labels[i]
         x_position = center_start + step_size * i
-        plt.figtext(x_position, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
-        plt.figtext(x_position, text_height, label, fontsize=fontsize, horizontalalignment='center', rotation='vertical')
         plt.figtext(x_position, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
-        x_boundary = left_side + step_size * i
-        plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
-        plt.figtext(x_boundary, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
-    x_boundary = left_side + step_size * num_regions
-    plt.figtext(x_boundary, tick_height, '|', fontsize=fontsize, horizontalalignment='center')
-    plt.figtext(x_boundary, text_height, str(region_size), fontsize=fontsize, horizontalalignment='center', rotation='vertical')
     return
+        
+def add_enh_labels (boundaries, labels, enh_labels, left_side, right_side, left_label, right_label):
+    num_regions = len(enh_labels)
+    #center_start = left_side + 0.5 * (right_side - left_side) / num_regions
+    step_size = (right_side - left_side) / num_regions
+    for i in range(0,num_regions):
+        coord = left_side + step_size * i
+        boundaries.append(coord)
+        labels = add_label(labels,left_label, coord)
+        coord2 = coord + step_size
+        labels = add_label(labels,right_label, coord2)
+        if left_label < 0 and 0 < right_label:
+            center =  coord + step_size * -left_label / (right_label - left_label)
+            boundaries.append(center)
+            labels = add_label(labels,"0", center)
+    boundaries.append(coord2)
+    return boundaries, labels
 
 ### OLD STUFF
     #char_width_corr = 10
@@ -250,18 +289,14 @@ def pull_feature_list ( features ):
         data_feature_list = [features]
     return data_feature_list
 
-def select_cluster_features( df, param_data_dict, features, data_features, args ):
+def select_cluster_features( df, param_data_dict, param_dict, features, data_features, args ):
     data_feature_list = pull_feature_list(data_features)
-    if features == 'tss':
-        up = args.tss_upperBound
-        dn = args.tss_lowerBound
-    elif features == 'enh':
-        up = args.enh_upperBound
-        dn = args.enh_lowerBound
     select_cols = []
     for data_type in data_feature_list:
         feat_tag = data_type + '-' + features
-        param_dict = dict(param_data_dict[feat_tag])
+        data_dict = dict(param_data_dict[feat_tag])
+        param = param_dict[feat_tag]
+        dn, up = pull_up_dn_bounds(param, features, args)
         select_cols_tmp = [ x for x in df if x.startswith(feat_tag) ]
         for feat in select_cols_tmp:
             test_feat =''
@@ -277,9 +312,29 @@ def select_cluster_features( df, param_data_dict, features, data_features, args 
                     test_feat = enh_feat
                 else:
                     continue
-            if test_feat in param_dict and dn <= param_dict[test_feat] and param_dict[test_feat] <= up:
-                    select_cols.append(feat)
+            if test_feat in data_dict and dn <= data_dict[test_feat] and data_dict[test_feat] <= up:
+                select_cols.append(feat)
     return select_cols
+
+def pull_up_dn_bounds(param, features, args):
+    dn = -param.region_size
+    up = param.region_size
+    if features == 'tss':
+        if args.tss_upperBound < up:
+            up = args.tss_upperBound
+        if args.tss_lowerBound > dn:
+            dn = args.tss_lowerBound
+    elif features == 'enh':
+        if args.enh_upperBound < up:
+            up = args.enh_upperBound
+        if args.enh_lowerBound > dn:
+            dn = args.enh_lowerBound
+    if param.lowerBound !=0 or param.upperBound != 0:
+        if param.upperBound < up:
+            up = param.uppperBound
+        if param.lowerBound > dn:
+            dn = param.lowerBound
+    return dn, up
 
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
@@ -289,7 +344,7 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
     param = param_dict[ anno_id ]
-    x_range = [-param.region_size,param.region_size]
+    #x_range = [-param.region_size,param.region_size]
     [data_type,anno_type] = anno_id.split('-')
     if anno_type == 'enh':
         y_data[['info','hue']] = y_data['index'].str.split('_', n=1, expand=True)
@@ -319,26 +374,38 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     plt.plot([md_pt,md_pt],[-1,1],'k-',alpha=0.5)
     plt.ylim([-args.max_y_val,args.max_y_val])
     plt.yticks(np.arange(-args.max_y_val, args.max_y_val*1.05, step=0.2))
-    plt.xlim(x_range)
-    if anno_type == 'tss':
-        feat_label = "TSS"
-        x_tick_minorLocator = MultipleLocator(1000)
-        ax.xaxis.set_minor_locator(x_tick_minorLocator)
-    elif anno_type == 'enh':
-        feat_label = "Enhancer"
-        x_tick_minorLocator = MultipleLocator(100)
-        ax.xaxis.set_minor_locator(x_tick_minorLocator)
-    else:
-        feat_label = anno_type
-        x_tick_minorLocator = MultipleLocator(100)
-        ax.xaxis.set_minor_locator(x_tick_minorLocator)
-    plt.xticks((-param.region_size,0,param.region_size),(str(param.region_size),feat_label,str(param.region_size)))
+    setup_x_axis(plt, ax, param, anno_type, args)
     if args.tight_layout:
         plt.tight_layout()
     plot_file = args.out_base + f".cluster_{cluster}.{data_type}.{anno_type}.png"
     plt.savefig(plot_file, bbox_inches='tight')
     plt.close()
     return
+
+def setup_x_axis(figure, axis, param, anno_type, args):
+    x_range = []
+    if param.lowerBound !=0 or param.upperBound !=0:
+        x_range = [param.lowerBound,param.upperBound]
+    else:
+        x_range = [-param.region_size,param.region_size]
+    figure.xlim(x_range)
+    if anno_type == 'tss':
+        feat_label = "TSS"
+        x_tick_minorLocator = MultipleLocator(1000)
+        axis.xaxis.set_minor_locator(x_tick_minorLocator)
+    elif anno_type == 'enh':
+        feat_label = "Enhancer"
+        plt.legend(loc='right', title='',bbox_to_anchor=(1.4,0.5),handlelength=1,handletextpad=0.5,frameon=False)
+        x_tick_minorLocator = MultipleLocator(100)
+        axis.xaxis.set_minor_locator(x_tick_minorLocator)
+    else:
+        feat_label = anno_type
+        x_tick_minorLocator = MultipleLocator(100)
+        axis.xaxis.set_minor_locator(x_tick_minorLocator)
+    axis.set_xlabel(f"Distance to {feat_label} (bp)")
+    figure.xticks((x_range[0],0,x_range[1]))
+    return
+    #return figure, axis
 
 def replace_axis_labels(df, column):
     new_df = df.copy(deep=True)
