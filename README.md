@@ -3,11 +3,13 @@ ME-Class trains a model to use differential DNA methylation to predict expressio
 
 ## Requirements
  * Python Packages
+	 *  dataclasses
+	 *  matplotlib
      *  numpy
      *  pandas
      *  scipy
      *  scikit-learn
-	 *  matplotlib
+	 *  seaborn
 
 ## Installation
     Clone and install with pip:
