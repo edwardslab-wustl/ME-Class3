@@ -1,4 +1,5 @@
 # ME-Class3
+ME-Class trains a model to use differential DNA methylation to predict expression changes in one or more pairs of samples. ME-Class3 is the latest updated version of ME-Class. This version can integrate methylation information from gene promoter and enhancer regions. It can also integrate data from both 5mC and 5hmC.  
 
 ## Requirements
  * Python Packages
@@ -9,93 +10,38 @@
 	 *  matplotlib
 
 ## Installation
-Clone and install with pip:
+    Clone and install with pip:
+      git clone https://github.com/edwardslab-wustl/ME-Class3.git
+      cd ME-Class3
+      pip install .
 
-````
-    git clone https://github.com/edwardslab-wustl/ME-Class3.git
-    cd ME-Class3
-    pip install .
-````
+## Docker information
+A dockerized version of ME-Class3 is available at: 
 
 ## Usage
+    meclass3 <subcommand> <arguments>
+    Use meclass3 -h to see full list of subcommands.
+    Use meclass3 <subcommand> -h to see help for individual subcommands.
+
+### Basic workflow
+  1. **preprocess** - Takes input methylation data for each sample and computes differential methylation for each specified pair.
+  1. **overlap_genes_enhancers** (opt) - overlaps gene annotations and a bed file of enhancer locations to link genes with specific enhancers
+  1. **interp** - Use preprocessed methylation data with gene or enhancer annotation data to compute methylation signatures
+  1. **plot_interp** (opt) - plot methylation signatures
+  1. **merge_data** - merge methylation signature from interp step along with expression data to make input data files for the classifier
+  1. **classify** - using merged data as input, train model to predict expression labels from methylation signatures
+  1. **plot_performance** - use output from one or more classify runs to make ROC and Acc vs Reject Rate plots
+  1. **pull_gene_list** - pull list of accurately predicted genes from classify step
+  1. **cluster** (opt) - unsupervised clustering of classify output to determine methylation signatures that yield accurate predictions
 
 ### Input files
 
 ### Example
 
 ## License information
+ME-Class3 is distributed under the GPL-3.0 Licence. 
 
 
 ## Parameters
 
-```
-
-1. Process samples: 
-
-	This module processes fractional methylaton files and generates differentail methylation files. 
-
-	-ctp	:	Cell type Fofn (Please refer to example data). 
-	-pto	:	Path to Output.
-	-expr	:	Name of expression file. Samples without expression information will be omitted.
-
-2. Generate proximity list:
-
-	This module generates list of enhancers based on their proximity to respective genes. 
-
-	-pst	:	(+)end start index.
-	-ped	:	(+)end end index.
-	-nst	:	(-)end start index.
-	-ned	:	(-)end end index.
-	-glf	:	Gene list file.
-
-3. Merge Gene and Enhancer features togather. 
-		
-	This module addes gene and enhancer features togather.
-
-	-pst    :	(+)end start index.
-	-ped    :	(+)end end index.
-	-nst    :	(-)end start index.
-	-ned    :	(-)end end index.
-	-tif    :	TSS interpolation file.
-
-4. Interpolation.
-	
-	This module generates interpolation of HRPS and regulatory regions. 
-
-	-sigma	:	Value of sigma. (default=50)
-	-nip	:	Number of interp points. (default=500)
-	-ibin	:	Size of bin around TSS/GB. (default=5000)
-	-ach	:	Anchor window. (default=100000). ( Used for flank normalization)
-	-rfl	:	RE flnk length. (default=500)
-	-rff	:	RE flnk features. (default=25)
-	-rfn	:	Region fofn file.
-	-tag	:	Tag for output.
-	-sfn	:	Sample file name.
-	-fln	:	Flank Normalized interpolation. (default=False)
-	-gsl	:	Interpolation  for slected genes?. (default=False)
-	-frf	:	Fixed features for RE flank. (default=False)
-	-mmg	:	Minimum CpGs assayed. (default=40)
-	-mmr	:	Minimum CpGs assayed. (default=2 )
-
-5. Add expression information.
-
-	-intrp	:	Interpolation CSV file.
-	-expr	:	Expression file.
-	-fef	:	Floor expression value? (default=True)
-	-efv	:	Expression floor value. (default=5.0)
-	-def	:	Method for differential expression. (default=1)
-
-6. Run classification.
-
-	-dfi	:	Interpolation-expression dataframe.
-	-ntr	:	Number of trees for Random Forest Classifier. (default=5001)
-	-npr	:	Number of Processors for RF run. (default=8)
-	-tag	:	Tag for Output Writing. (test)
-	-fsl	:	Feature Selection. 1: TSS; 2: TSS+RE, 3: RE.
-	-suf	:	Shuffle true ot false. (default=True)
-
-7. Run evaluation.
-
-	This module prints some useful matrices such as F1 score, accuracy, number of genes with high accuracy.
-
-	-dfi	: Output file from classification step. 
+ 
