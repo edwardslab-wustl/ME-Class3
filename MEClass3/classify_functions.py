@@ -5,11 +5,9 @@ import seaborn as sns
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
-from matplotlib.ticker import MultipleLocator
-
 
 from MEClass3.cluster_functions import select_features
-from MEClass3.cluster_functions import setup_x_axis
+from MEClass3.plot_functions import setup_x_axis
 
 
 def read_interp_files(file_list):
@@ -23,7 +21,6 @@ def read_interp_files(file_list):
             df = df_new
             del df_tmp
             del df_new
-    #df.set_index( df.columns[0] )
     return df
 
 def normalize_labels(df):
@@ -33,12 +30,10 @@ def normalize_labels(df):
     num_dn = pd.Series(expr_flag_value_count)[-1]
     if num_up > num_dn:
         idx = df.index[ (df['expr_flag'] == 1) ]
-        #df.at[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag'] = 0
         df.loc[np.random.choice(idx, size=(num_up-num_dn), replace=False), 'expr_flag'] = 0
         del idx
     elif num_dn > num_up:
         idx = df.index[ (df['expr_flag'] == -1) ]
-        #df.at[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag'] = 0
         df.loc[np.random.choice(idx, size=(num_dn-num_up), replace=False), 'expr_flag'] = 0
         del idx
     return df

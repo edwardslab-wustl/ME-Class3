@@ -9,6 +9,7 @@ from matplotlib.ticker import MultipleLocator
 from MEClass3.io_functions import eprint
 from MEClass3.io_functions import read_gene_file
 from MEClass3.io_functions import read_region_file
+from MEClass3.plot_functions import setup_x_axis
 
 def extract_raw_data(start_ref_pt, end_ref_pt, chrom, strand, raw_data_dict_chr, raw_data_index, raw_data_index_size, param, args):
     raw_x_data = []
@@ -66,6 +67,26 @@ def pull_start_end(anno, type):
     return start, end
 
 def plot_interp(x, y, raw_x_data, raw_y_data, gene, data_type, anno_type, out_file, param, args):
+    fig, ax = plt.subplots( nrows=1, ncols=1 )
+    x_range = [-param.region_size,param.region_size]
+    ax.plot([0,0],[-1,1], linestyle='dashed', color='black')
+    ax.plot(x_range,[0,0], color='black')
+    ax.plot(x,y, color=args.interp_data_color)
+    if len(raw_x_data) > 0:
+        ax.plot(raw_x_data, raw_y_data,
+                marker="o",
+                markersize=2,
+                linestyle='None',
+                color=args.raw_data_color)
+    plt.title(gene, loc='left')
+    ax.set_ylabel(r'$\Delta$' + data_type)
+    plt.ylim(-args.max_y_val,args.max_y_val)
+    setup_x_axis(plt, ax, param, anno_type, args)
+    plt.savefig(out_file, bbox_inches='tight')
+    plt.close()
+    return
+
+def plot_interp_old(x, y, raw_x_data, raw_y_data, gene, data_type, anno_type, out_file, param, args):
     fig, ax = plt.subplots( nrows=1, ncols=1 )
     x_range = [-param.region_size,param.region_size]
     ax.plot([0,0],[-1,1], linestyle='dashed', color='black')

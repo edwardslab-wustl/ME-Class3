@@ -24,7 +24,7 @@ def add_tss_interp(df_interp, file, data_type, args):
     df_merged = ''
     tss_interp = pd.read_csv(file, comment='#')
     param_data_dict, param_dict = read_params_from_interp_2(file)
-    feat_cols = select_cluster_features(tss_interp, param_data_dict, 'tss', data_type, args)
+    feat_cols = select_cluster_features(tss_interp, param_data_dict, param_dict, 'tss', data_type, args)
     feat_cols.append('gene_id-sample_name')
     tss_interp = tss_interp.loc[:,feat_cols]
     if len(df_interp) == 0:
@@ -56,7 +56,7 @@ def add_enh_interp(df_interp, file, data_type, args):
     for enh_loc in enh_interp_all['enh_loc'].unique():
         df_tmp_interp = enh_interp_all[enh_interp_all['enh_loc'] == enh_loc]
         df_tmp_interp = fix_column_headers(df_tmp_interp, enh_loc)
-        feat_cols = select_cluster_features(df_tmp_interp, param_data_dict, 'enh', data_type, args)
+        feat_cols = select_cluster_features(df_tmp_interp, param_data_dict, param_dict, 'enh', data_type, args)
         feat_cols.extend(['enh_loc-gene_id-sample_name', 'gene_id-sample_name'])
         df_tmp_interp = df_tmp_interp.loc[:,feat_cols]
         if len(df_merged) == 0:

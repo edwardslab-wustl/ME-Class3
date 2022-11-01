@@ -8,8 +8,9 @@ import seaborn as sns
 import matplotlib as mpl
 mpl.use('Agg')
 from matplotlib import pyplot as plt
-from matplotlib.ticker import MultipleLocator
-#import matplotlib.gridspec
+
+from MEClass3.plot_functions import setup_x_axis
+from MEClass3.plot_functions import pull_up_dn_bounds
 
 class recursion_depth:
 # from : https://www.codingem.com/python-maximum-recursion-depth/
@@ -53,33 +54,6 @@ def check_purity(Y):
         purity = -1
     return purity,direction
 
-def cluster_plot_heatmap_old(df, norm_Y, linkage, cluster_tags, args):
-    filename = args.out_base + ".meth.clustermap.png"
-    title = "Delta Meth."
-    meth_cmap = sns.diverging_palette(240,10,n=15,as_cmap=True)
-    cluster_cmap = plt.get_cmap("cool")
-    pred_cmap = plt.get_cmap("RdYlGn_r")
-    # idea is to add column color for samples
-    #sample_cmap = plt.get_cmap("gnuplot2")
-    #sample_tags = [float(1)/(s+1) for s in S]    
-    #row_colors = [sample_cmap(sample_tags),pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
-    row_colors = [pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
-    vmin = -args.color_max_meth_diff
-    vmax = args.color_max_meth_diff
-    #sns.set(style="white")
-    sns.set(font_scale=2)
-    with recursion_depth(5000):
-        sns.clustermap( df, row_colors=row_colors,col_cluster = False,
-                           figsize=(35,25), row_linkage=linkage,
-                           cmap=meth_cmap, linewidths = 0,
-                           xticklabels=True,yticklabels=False,
-                           vmin = vmin, vmax = vmax,
-                           dendrogram_ratio=(.08, .2))
-                           ##figsize=(35,25),  method=args.linkage_method, row_linkage=linkage,
-    plt.title(title)
-    plt.savefig(filename)
-    plt.close()   
-    return
 
 def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_type, args):
     filename = args.out_base + f".{data_type}.clustermap.png"
@@ -309,25 +283,6 @@ def select_cluster_features( df, param_data_dict, param_dict, features, data_fea
                 select_cols.append(feat)
     return select_cols
 
-def pull_up_dn_bounds(param, features, args):
-    dn = -param.region_size
-    up = param.region_size
-    if features == 'tss':
-        if args.tss_upperBound < up:
-            up = args.tss_upperBound
-        if args.tss_lowerBound > dn:
-            dn = args.tss_lowerBound
-    elif features == 'enh':
-        if args.enh_upperBound < up:
-            up = args.enh_upperBound
-        if args.enh_lowerBound > dn:
-            dn = args.enh_lowerBound
-    if param.lowerBound !=0 or param.upperBound != 0:
-        if param.upperBound < up:
-            up = param.uppperBound
-        if param.lowerBound > dn:
-            dn = param.lowerBound
-    return dn, up
 
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
@@ -375,31 +330,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     plt.close()
     return
 
-def setup_x_axis(figure, axis, param, anno_type, args):
-    x_range = []
-    if param.lowerBound !=0 or param.upperBound !=0:
-        x_range = [param.lowerBound,param.upperBound]
-    else:
-        x_range = [-param.region_size,param.region_size]
-    figure.xlim(x_range)
-    if anno_type == 'tss':
-        feat_label = "TSS"
-        x_tick_minorLocator = MultipleLocator(1000)
-        axis.xaxis.set_minor_locator(x_tick_minorLocator)
-    elif anno_type == 'enh':
-        feat_label = "Enhancer"
-        plt.legend(loc='right', title='',bbox_to_anchor=(1.4,0.5),handlelength=1,handletextpad=0.5,frameon=False)
-        x_tick_minorLocator = MultipleLocator(100)
-        axis.xaxis.set_minor_locator(x_tick_minorLocator)
-    else:
-        feat_label = anno_type
-        x_tick_minorLocator = MultipleLocator(100)
-        axis.xaxis.set_minor_locator(x_tick_minorLocator)
-    axis.set_xlabel(f"Distance to {feat_label} (bp)")
-    figure.xticks((x_range[0],0,x_range[1]))
-    return
-    #return figure, axis
-
 def replace_axis_labels(df, column):
     new_df = df.copy(deep=True)
     bin_size = 20
@@ -419,3 +349,36 @@ def check_features(anno, feat):
     else:
         return_flag = False
     return return_flag
+
+
+##################
+## OLD FUNCTIONS
+##################
+
+## def cluster_plot_heatmap_old(df, norm_Y, linkage, cluster_tags, args):
+##     filename = args.out_base + ".meth.clustermap.png"
+##     title = "Delta Meth."
+##     meth_cmap = sns.diverging_palette(240,10,n=15,as_cmap=True)
+##     cluster_cmap = plt.get_cmap("cool")
+##     pred_cmap = plt.get_cmap("RdYlGn_r")
+##     # idea is to add column color for samples
+##     #sample_cmap = plt.get_cmap("gnuplot2")
+##     #sample_tags = [float(1)/(s+1) for s in S]    
+##     #row_colors = [sample_cmap(sample_tags),pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
+##     row_colors = [pred_cmap(norm_Y),cluster_cmap(cluster_tags)]
+##     vmin = -args.color_max_meth_diff
+##     vmax = args.color_max_meth_diff
+##     #sns.set(style="white")
+##     sns.set(font_scale=2)
+##     with recursion_depth(5000):
+##         sns.clustermap( df, row_colors=row_colors,col_cluster = False,
+##                            figsize=(35,25), row_linkage=linkage,
+##                            cmap=meth_cmap, linewidths = 0,
+##                            xticklabels=True,yticklabels=False,
+##                            vmin = vmin, vmax = vmax,
+##                            dendrogram_ratio=(.08, .2))
+##                            ##figsize=(35,25),  method=args.linkage_method, row_linkage=linkage,
+##     plt.title(title)
+##     plt.savefig(filename)
+##     plt.close()   
+##     return
