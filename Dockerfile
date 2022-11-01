@@ -2,7 +2,7 @@ FROM centos:7.7.1908
 
 LABEL maintainer="John Edwards <jredwards@wustl.edu>"
 
-# Install python3 and relevant modules
+# Install python3 and other needed rpms
 RUN yum install -y git python3 python3-devel atlas-devel zlib-devel \
         libjpeg-turbo-devel gcc libtiff-devel freetype-devel tcl-devel \
         libwebp-devel \
