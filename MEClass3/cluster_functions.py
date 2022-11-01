@@ -54,7 +54,6 @@ def check_purity(Y):
         purity = -1
     return purity,direction
 
-
 def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_type, args):
     filename = args.out_base + f".{data_type}.clustermap.png"
     title = r'$\Delta$' + f"{data_type}"
@@ -88,15 +87,11 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
     right_side = 3464 / (fig_width * 100)
     plt.figtext(left_side - 140 / (fig_width * 100), tick_height, "Expr.", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
     plt.figtext(left_side - 60 / (fig_width * 100), tick_height, "Cluster", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
-    #data_type = 'mC'
     x_labels = defaultdict(list)
     if args.plot_anno == 'tss':
         anno_id = data_type + '-' + args.plot_anno
-        anno_label = 'TSS'
         left_label = param_dict[anno_id].left_label()
         right_label = param_dict[anno_id].right_label()
-        #region_size = param_dict[anno_id].size()
-        #region_size = param_dict[anno_id].region_size
         x_labels = add_tss_labels(x_labels, left_side, right_side, left_label, right_label) 
         add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.plot_anno == 'enh':
@@ -104,26 +99,17 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         enh_labels = pull_enh_labels(df)
         left_label = param_dict[anno_id].left_label()
         right_label = param_dict[anno_id].right_label()
-        #region_size = param_dict[anno_id].size()
-        #region_size = param_dict[anno_id].region_size
         x_labels = add_enh_labels(x_labels, enh_labels, left_side, right_side, left_label, right_label )
         add_cat_labels(plt, enh_labels, left_side, right_side, anno_label_height, fontsize2, rotate=False )
     elif args.plot_anno == 'all':
         num_tss_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'tss')])
         num_enh_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'enh')])
         enh_labels = pull_enh_labels(df)
-        #num_enh_regions = len(enh_labels)
-        #enh_region_size = param_dict[data_type + '-' + 'enh'].region_size
-        #tss_region_size = param_dict[data_type + '-' + 'tss'].region_size
-        #enh_region_size = param_dict[data_type + '-' + 'enh'].size()
         enh_left_label = param_dict[data_type + '-' + 'enh'].left_label()
         enh_right_label = param_dict[data_type + '-' + 'enh'].right_label()
-        #tss_region_size = param_dict[data_type + '-' + 'tss'].size()
         tss_left_label = param_dict[data_type + '-' + 'tss'].left_label()
         tss_right_label = param_dict[data_type + '-' + 'tss'].right_label()
-        #enh_start = left_side + (right_side - left_side) * (tss_region_size / (tss_region_size + enh_region_size * num_enh_regions)) 
         enh_start = left_side + (right_side - left_side) * (num_tss_feat / (num_tss_feat + num_enh_feat)) 
-        #enh_start = enh_start - 27 / (fig_width * 100)
         x_labels = add_tss_labels(x_labels, left_side, enh_start, tss_left_label, tss_right_label) 
         x_labels = add_enh_labels(x_labels, enh_labels, enh_start, right_side, enh_left_label, enh_right_label )
         add_cat_labels(plt, enh_labels, enh_start, right_side, anno_label_height, fontsize2, rotate=True )
@@ -143,11 +129,6 @@ def pull_enh_labels(df):
             if y not in result:
                 result.append(y) 
     return result
-
-#def add_tss_cat_label (plt, left_side, right_side, anno_label, anno_label_height, fontsize2, label_rotation=False):
-#    md_pt = (right_side - left_side ) / 2 + left_side
-#    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
-#    return
 
 def add_tss_labels (labels, left_side, right_side, left_label, right_label):
     if int(left_label) < 0 and 0 < int(right_label):
@@ -191,12 +172,6 @@ def add_enh_labels (labels, enh_labels, left_side, right_side, left_label, right
             center =  coord + step_size * -left_label / (right_label - left_label)
             labels = add_label(labels,"0", center)
     return labels
-
-### OLD STUFF
-    #char_width_corr = 10
-    #plt.figtext(md_pt - char_width_corr * len(anno_label) / 3500, text_height, anno_label, fontsize=fontsize)
-    #plt.figtext(left_side - char_width_corr * len(str(region_size +1)) / 3500, text_height, str(-region_size), fontsize=fontsize)
-    #plt.figtext(right_side - char_width_corr * len(str(region_size)) / 3500, text_height, str(region_size), fontsize=fontsize)
 
 def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_dict, param_dict, args):    
     cluster_info = []
@@ -283,7 +258,6 @@ def select_cluster_features( df, param_data_dict, param_dict, features, data_fea
                 select_cols.append(feat)
     return select_cols
 
-
 def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_data,param_dict,anno_id,args):
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
@@ -292,7 +266,6 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
     param = param_dict[ anno_id ]
-    #x_range = [-param.region_size,param.region_size]
     [data_type,anno_type] = anno_id.split('-')
     if anno_type == 'enh':
         y_data[['info','hue']] = y_data['index'].str.split('_', n=1, expand=True)
@@ -382,3 +355,13 @@ def check_features(anno, feat):
 ##     plt.savefig(filename)
 ##     plt.close()   
 ##     return
+
+    #char_width_corr = 10
+    #plt.figtext(md_pt - char_width_corr * len(anno_label) / 3500, text_height, anno_label, fontsize=fontsize)
+    #plt.figtext(left_side - char_width_corr * len(str(region_size +1)) / 3500, text_height, str(-region_size), fontsize=fontsize)
+    #plt.figtext(right_side - char_width_corr * len(str(region_size)) / 3500, text_height, str(region_size), fontsize=fontsize)
+    
+#def add_tss_cat_label (plt, left_side, right_side, anno_label, anno_label_height, fontsize2, label_rotation=False):
+#    md_pt = (right_side - left_side ) / 2 + left_side
+#    plt.figtext(md_pt, anno_label_height, anno_label, fontsize=fontsize2, horizontalalignment='center', rotation=label_rotation)
+#    return

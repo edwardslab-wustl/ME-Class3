@@ -94,41 +94,6 @@ def exec_merge_data(args):
                     out_FH.write(header)
                 out_FH.write(out_csv_data)
                 
-## OLD dexpr_flag parsing
-#            if args.dexpr_flag == 0:   
-#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
-#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
-#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
-#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1 == 1.0, 0.0, df_expr[sample_pair.name]])
-#            elif args.dexpr_flag == 1:   
-#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
-#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
-#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
-#            elif args.dexpr_flag == 2:   
-#                df_expr[sample_pair.name] = np.log2( df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1] )
-#            elif args.dexpr_flag == 3:   
-#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
-#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
-#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
-
-
-#            if args.dexpr_flag == 0: # me-class demo
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0, 1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0, -1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
-#            elif args.dexpr_flag == 1: # me-class paper
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= 2, 1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -2, -1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
-#            elif args.dexpr_flag == 2:
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0.0, 1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0.0, -1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] = df_interp['expr_flag'].astype(int)
-#            elif args.dexpr_flag == 3: # custom
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= args.expr_cutoff, 1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -args.expr_cutoff, -1, df_interp['expr_flag'] )
-#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
-
 def exec_merge_data_help(parser):
     parser_required = parser.add_argument_group('required arguments')
     parser_required.add_argument('-i', '--input_list', action='store',
@@ -175,3 +140,40 @@ def exec_merge_data_help(parser):
         default='merge_data.log', help='log file')
     parser._action_groups.reverse()
     return(parser)
+
+
+
+## OLD dexpr_flag parsing
+#            if args.dexpr_flag == 0:   
+#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
+#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
+#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
+#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1 == 1.0, 0.0, df_expr[sample_pair.name]])
+#            elif args.dexpr_flag == 1:   
+#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
+#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
+#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
+#            elif args.dexpr_flag == 2:   
+#                df_expr[sample_pair.name] = np.log2( df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1] )
+#            elif args.dexpr_flag == 3:   
+#                df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
+#                                                     -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
+#                                                      (df_expr[sample_pair.tag2] / df_expr[sample_pair.tag1]) )
+
+
+#            if args.dexpr_flag == 0: # me-class demo
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0, 1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0, -1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
+#            elif args.dexpr_flag == 1: # me-class paper
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= 2, 1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -2, -1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)
+#            elif args.dexpr_flag == 2:
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] > 0.0, 1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] < 0.0, -1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] = df_interp['expr_flag'].astype(int)
+#            elif args.dexpr_flag == 3: # custom
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] >= args.expr_cutoff, 1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] = np.where( df_interp['expr_value'] <= -args.expr_cutoff, -1, df_interp['expr_flag'] )
+#                df_interp['expr_flag'] =  df_interp['expr_flag'].astype(int)

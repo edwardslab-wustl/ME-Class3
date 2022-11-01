@@ -8,7 +8,6 @@ Created on Mon Dec 19 11:30:15 2016
 #import warnings
 import argparse
 from os.path import exists
-#from re import I
 
 import pandas as pd
 import scipy.cluster.hierarchy    
@@ -28,7 +27,6 @@ from MEClass3.io_functions import eprint
 from MEClass3.io_functions import read_params_from_interp_2
 
 #warnings.filterwarnings("ignore", category=UserWarning)
-
 
 def exec_cluster(args):
     with open(args.logfile, 'w') as log_FH:
@@ -98,7 +96,6 @@ def exec_cluster(args):
         cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,param_data_dict, param_dict, args)
         print_to_log(log_FH, "\n".join(cluster_info))
         return
-        
         
 def exec_cluster_help(parser):
     parser_required = parser.add_argument_group('required arguments')

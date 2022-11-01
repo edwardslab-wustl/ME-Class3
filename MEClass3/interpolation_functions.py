@@ -3,7 +3,6 @@ import multiprocessing as mp
 from itertools import repeat
 
 from MEClass3.Interpolation_class import Interpolation
-from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import eprint 
 
 def generate_out_header(num_pts, anno_type, data_type):
@@ -192,101 +191,99 @@ def interp_region(region, dict_bed, sample_id, args):
     return result 
 
 
-
-
 ###############################
 ### OLD CODE
 ###############################
-def interp_genes_OLD(gene_list, dict_bed, sample_id, log_FH, args):
-    out_data = ''
-    interp_bin = args.ibin_inp
-    reg_type='gene'
-    for gene in gene_list:
-        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
-        tss = gene.tss()
-        tes = gene.tes()
-        print_to_log(log_FH, gene.id + "\n")
-        # ----------------------------------------------------------------------------
-        # Methylation based gene filters
-        # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
-        # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
-        for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
-            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
-                dmet_tmp.append(dict_bed[gene.chr][cpos])
-                cpos_tmp.append(cpos)
-        if len(dmet_tmp) < args.min_gene_cpgs:
-            print_to_log(log_FH, gene.id + ' has < ' +  str(args.min_gene_cpgs)  + ' CpGs assayed in ' + sample_id + '\n')
-            continue
-        if max(dmet_tmp) < args.min_gene_meth:
-            print_to_log(log_FH, gene.id + ' has < ' + str(args.min_gene_meth) +' maximum methylation change in ' + sample_id + '\n')
-            continue
-        #-----------------------------------------------------------------------------    
-        if not args.flankNorm: # Endpoint correction will be used in this case
-            anchor_window = 0
-#        if args.flankNorm:
-        for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
-            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
-                dmet_dat.append(dict_bed[gene.chr][cpos])
-                cpos_dat.append(cpos)
-        # Missing anchor            
-        if args.flankNorm and \
-            (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
-            ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
-            print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
-            continue 
-        # Gather interpolated data
-        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
-        # cross-check number of interpolated features
-        if len(interpolated_dmet_data) != args.num_interp_points:
-            eprint('Inconsistent number of interpolation features!')
-            exit() # Exit if number is inconsistent 
-        # Write data
-        out_data = out_data + '\n'+gene.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
-        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
-    return out_data
-
-
-def interp_regions_OLD(region_list, dict_bed, sample_id, log_FH, args):
-    out_data=''
-    reg_type = 're'
-    interp_bin = 500 # for model gene plots
-    # Regulatory Elements
-    for region in region_list: # regulatory elements
-        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
-        print_to_log(log_FH, region.id+'\n')
-        # ----------------------------------------------------------------------------
-        # Methylation based filters
-        # 3. Genes with <2 CpGs assayed within enhancer
-        #
-        for cpos in range( (region.start-interp_bin), (region.end+interp_bin)+1 ):
-            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
-                dmet_tmp.append(dict_bed[region.chr][cpos])
-                cpos_tmp.append(cpos)
-        if len(dmet_tmp) < args.min_reg_cpgs:
-            print_to_log(log_FH,region.id + ' has < ' +  str(args.min_reg_cpgs) \
-                        + ' CpGs assayed in ' + sample_id + '\n')
-            continue
-        #-----------------------------------------------------------------------------
-        if not args.flankNorm:
-            anchor_window = 0
-        for cpos in range( region.start-(interp_bin+anchor_window), region.end+(interp_bin+anchor_window)+1 ):
-            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
-                dmet_dat.append(dict_bed[region.chr][cpos])
-                cpos_dat.append(cpos)
-                # Missing anchor
-        if args.flankNorm and \
-            (( cpos_dat[0] not in range( region.start-(interp_bin+anchor_window), region.start-interp_bin ) ) or \
-            ( cpos_dat[-1] not in range( region.end+interp_bin+1, region.end+(interp_bin+anchor_window)+1 ) )):
-            print_to_log(log_FH,region.id + ' has no CpGs in anchor windows in ' + sample_id + '\n')
-            continue
-        # Gather interpolated data
-        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, region.start, region.end, region.strand, reg_type, args).dat_proc()
-        # cross-check number of interpolated features
-        if len(interpolated_dmet_data) != args.num_interp_points:
-            print_to_log(log_FH,str(len(interpolated_dmet_data)))
-            print_to_log(log_FH,'Inconsistent number of interpolation features!')
-            exit()
-        # Write data 
-        out_data = out_data + '\n'+region.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
-        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
-    return out_data 
+# def interp_genes_OLD(gene_list, dict_bed, sample_id, log_FH, args):
+#     out_data = ''
+#     interp_bin = args.ibin_inp
+#     reg_type='gene'
+#    for gene in gene_list:
+#        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+#        tss = gene.tss()
+#        tes = gene.tes()
+#        print_to_log(log_FH, gene.id + "\n")
+#        # ----------------------------------------------------------------------------
+#        # Methylation based gene filters
+#        # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
+#        # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
+#        for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
+#            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+#                dmet_tmp.append(dict_bed[gene.chr][cpos])
+#                cpos_tmp.append(cpos)
+#        if len(dmet_tmp) < args.min_gene_cpgs:
+#            print_to_log(log_FH, gene.id + ' has < ' +  str(args.min_gene_cpgs)  + ' CpGs assayed in ' + sample_id + '\n')
+#            continue
+#        if max(dmet_tmp) < args.min_gene_meth:
+#            print_to_log(log_FH, gene.id + ' has < ' + str(args.min_gene_meth) +' maximum methylation change in ' + sample_id + '\n')
+#            continue
+#        #-----------------------------------------------------------------------------    
+#        if not args.flankNorm: # Endpoint correction will be used in this case
+#            anchor_window = 0
+##        if args.flankNorm:
+#        for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+#            if gene.chr in dict_bed and cpos in dict_bed[gene.chr]:
+#                dmet_dat.append(dict_bed[gene.chr][cpos])
+#                cpos_dat.append(cpos)
+#        # Missing anchor            
+#        if args.flankNorm and \
+#            (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
+#            ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+#            print_to_log(log_FH, gene.id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+#            continue 
+#        # Gather interpolated data
+#        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
+#        # cross-check number of interpolated features
+#        if len(interpolated_dmet_data) != args.num_interp_points:
+#            eprint('Inconsistent number of interpolation features!')
+#            exit() # Exit if number is inconsistent 
+#        # Write data
+#        out_data = out_data + '\n'+gene.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
+#        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+#    return out_data
+#
+#
+#def interp_regions_OLD(region_list, dict_bed, sample_id, log_FH, args):
+#    out_data=''
+#    reg_type = 're'
+#    interp_bin = 500 # for model gene plots
+#    # Regulatory Elements
+#    for region in region_list: # regulatory elements
+#        cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+#        print_to_log(log_FH, region.id+'\n')
+#        # ----------------------------------------------------------------------------
+#        # Methylation based filters
+#        # 3. Genes with <2 CpGs assayed within enhancer
+#        #
+#        for cpos in range( (region.start-interp_bin), (region.end+interp_bin)+1 ):
+#            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
+#                dmet_tmp.append(dict_bed[region.chr][cpos])
+#                cpos_tmp.append(cpos)
+#        if len(dmet_tmp) < args.min_reg_cpgs:
+#            print_to_log(log_FH,region.id + ' has < ' +  str(args.min_reg_cpgs) \
+#                        + ' CpGs assayed in ' + sample_id + '\n')
+#            continue
+#        #-----------------------------------------------------------------------------
+#        if not args.flankNorm:
+#            anchor_window = 0
+#        for cpos in range( region.start-(interp_bin+anchor_window), region.end+(interp_bin+anchor_window)+1 ):
+#            if region.chr in dict_bed and cpos in dict_bed[region.chr]:
+#                dmet_dat.append(dict_bed[region.chr][cpos])
+#                cpos_dat.append(cpos)
+#                # Missing anchor
+#        if args.flankNorm and \
+#            (( cpos_dat[0] not in range( region.start-(interp_bin+anchor_window), region.start-interp_bin ) ) or \
+#            ( cpos_dat[-1] not in range( region.end+interp_bin+1, region.end+(interp_bin+anchor_window)+1 ) )):
+#            print_to_log(log_FH,region.id + ' has no CpGs in anchor windows in ' + sample_id + '\n')
+#            continue
+#        # Gather interpolated data
+#        interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, region.start, region.end, region.strand, reg_type, args).dat_proc()
+#        # cross-check number of interpolated features
+#        if len(interpolated_dmet_data) != args.num_interp_points:
+#            print_to_log(log_FH,str(len(interpolated_dmet_data)))
+#            print_to_log(log_FH,'Inconsistent number of interpolation features!')
+#            exit()
+#        # Write data 
+#        out_data = out_data + '\n'+region.id+'-'+sample_id+','+','.join(str(item) for item in interpolated_dmet_data)
+#        del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+#    return out_data 

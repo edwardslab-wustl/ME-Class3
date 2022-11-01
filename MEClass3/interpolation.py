@@ -8,7 +8,6 @@ from MEClass3.interpolation_functions import generate_out_header
 from MEClass3.interpolation_functions import add_fail
 from MEClass3.interpolation_functions import interp_list_sp
 from MEClass3.interpolation_functions import interp_list_mp
-#from MEClass3.interpolation_functions import generate_param_list
 from MEClass3.interpolation_functions import generate_param_comment
 from MEClass3.interpolation_functions import format_fail_dict
 from MEClass3.io_functions import print_to_log
@@ -50,7 +49,6 @@ def exec_interp(args):
                     anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
                 else:
                     anno_list_postfilter.append(gene)
-            #out_file_suffix = '_gene_interp'
             fail_text = 'genes'
             #param_data = generate_param_list(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
             param_data = generate_param_comment(args.num_interp_points, args.ibin_inp, args.data_type, anno_type)
@@ -68,10 +66,8 @@ def exec_interp(args):
             sample_id = sample_pair.name 
             sample_file = args.output_path + '/' + sample_pair.name +'.bedgraph' 
             out_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".csv"
-            #param_file = args.output_path + "/" + sample_pair.name + out_file_suffix + ".param"
             print_to_log(log_FH, "processing: " + sample_id + " -> " + sample_file + "\n")
             print_to_log(log_FH, "out_file: " + out_file + "\n")
-            #print_to_log(log_FH, "param_file: " + param_file + "\n")
             dict_bed = {}
             bed_file_lines = read_bed_file(sample_file)
             chr_track = 'chr00'

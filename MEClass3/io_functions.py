@@ -198,7 +198,6 @@ def index_raw_data (file, size):
                 else:
                     index[(chrom,idx)] = [pos1]
     return data, index, idx_size
-                
 
 def read_region_file(file):
     region_list = []
@@ -245,24 +244,6 @@ def read_enhancer_file(file, delimiter = 1000):
                             pos_track += 1
                 line_num += 1
     return dict_bed, dict_bed_idx
-#        dict_bed[chr_list[cnt]] = []
-#        dict_bed[chr_list[cnt]+'_idx'] = {}
-#        for line_num, line in enumerate(bed_file_lines):
-#            dict_bed[chr_list[cnt]].append( [int(line.split()[1]), int(line.split()[2])] )
-#            if line_num == 0:
-#                pos_track = int( (int(line.split()[1]))/delimiter )
-#                dict_bed[chr_list[cnt]+'_idx'][int((int(line.split()[1]))/delimiter)] = 1 #line_num to handle -1 for very first line
-#
-#            if pos_track != int( (int(line.split()[1]))/delimiter ):
-#                for i in range(pos_track, int( (int(line.split()[1]))/delimiter )):
-#                    if pos_track + 1 == int( (int(line.split()[1]))/delimiter ):
-#                        dict_bed[chr_list[cnt]+'_idx'][int((int(line.split()[1]))/delimiter)] = line_num
-#                        pos_track = int( (int(line.split()[1]))/delimiter )
-#                    if pos_track + 1 < int( (int(line.split()[1]))/delimiter ):
-#                        dict_bed[chr_list[cnt]+'_idx'][pos_track+1] = dict_bed[chr_list[cnt]+'_idx'][pos_track]
-#                        pos_track = pos_track + 1
-#
-#        del bed_file_lines[:]
                 
 def read_gene_file(file):
     gene_list = []
@@ -270,24 +251,16 @@ def read_gene_file(file):
         for line in FH:
             if not line.startswith('#'):
                 items = line.strip().split()
-                gene_list.append( GeneAnno( items[1],
-                                            int(items[4]),
-                                            int(items[5]),
-                                            int(items[6]),
-                                            int(items[7]),
-                                            items[13],
-                                            items[14],
-                                            int(items[8]),
-                                            items[3],
-                                            items[2] ))
-                #txStart = int( lines_items[4] )
-                #txEnd = int( lines_items[5] )
-                #cdsStart = int( lines_items[6] )
-                #cdsEnd = int( lines_items[7] )
-                #exonCount = int( lines_items[8] )
-                #cdsStartStat = lines_items[13]
-                #cdsEndStat = lines_items[14]
-                #gene_length = txEnd - txStart 
+                gene_list.append( GeneAnno( items[1], #geneID
+                                            int(items[4]), #txStart
+                                            int(items[5]), #txEnd
+                                            int(items[6]), #cdsStart
+                                            int(items[7]), #cdsEnd
+                                            items[13], #cdsStartStat
+                                            items[14], #cdsEndStat
+                                            int(items[8]), #exonCount
+                                            items[3], #strand
+                                            items[2] )) #chr
     return gene_list
 
 def read_bed_file(file):
