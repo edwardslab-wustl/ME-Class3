@@ -33,9 +33,9 @@ from MEClass3.io_functions import read_params_from_interp_2
 def exec_cluster(args):
     with open(args.logfile, 'w') as log_FH:
         print_to_log(log_FH, format_args_to_print(args))
-        check_feat = check_features(args.anno_type, args.features)
+        check_feat = check_features(args.plot_anno, args.cluster_anno)
         if not check_feat:
-            eprint(f"invalid combination --anno_type, --features: {args.anno_type},{args.features}. --features must be the same or a subset of --anno_type.\n")
+            eprint(f"invalid combination --plot_anno, --cluster_anno: {args.plot_anno},{args.cluster_anno}. --cluster_anno must be the same or a subset of --plot_anno.\n")
             exit()
         pred_data = read_pred_file(args.pred_file)
         pred_data_filtered = pred_data[ \
@@ -45,7 +45,7 @@ def exec_cluster(args):
         found_data_flag = False
         param_data_dict = dict()
         param_dict = dict()
-        data_feature_list = pull_feature_list(args.features_data)
+        data_feature_list = pull_feature_list(args.cluster_data_type)
         for sample in pred_data_filtered['sample_name'].unique():
             sample_file = args.interp_data_path + '/' + sample + ".interp_expr_data.csv"
             if not exists(sample_file):
@@ -70,18 +70,18 @@ def exec_cluster(args):
         if 'clf_flag' in merged_data.columns:
             merged_data.drop('clf_flag', axis=1, inplace=True)
         #merged_data.dropna()
-        feat_cols = select_features(merged_data, args.anno_type, args.data_type)
-        if args.features == 'all':
+        feat_cols = select_features(merged_data, args.plot_anno, args.plot_data_type)
+        if args.cluster_anno == 'all':
             #feat_cols_cluster = feat_cols
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, 'tss', args.features_data, args)
-            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, param_dict, 'enh', args.features_data, args))
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, 'tss', args.cluster_data_type, args)
+            feat_cols_cluster.extend(select_cluster_features(merged_data, param_data_dict, param_dict, 'enh', args.cluster_data_type, args))
         else:
-            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, args.features, args.features_data, args)
+            feat_cols_cluster = select_cluster_features(merged_data, param_data_dict, param_dict, args.cluster_anno, args.cluster_data_type, args)
         if len(feat_cols) == 0:
-            eprint(f"could not find any features: {args.anno_type} {args.data_type}\nCheck --anno_type and --data_type match features in data files.\n")
+            eprint(f"could not find any features: {args.plot_anno} {args.plot_data_type}\nCheck --plot_anno and --plot_data_type match features in data files.\n")
             exit()
         elif len(feat_cols_cluster) == 0:
-            eprint(f"could not find any features for clustering: {args.features}\nCheck --features and feature subsetting params in data files.\n")
+            eprint(f"could not find any features for clustering: {args.cluster_anno}\nCheck --cluster_anno and feature subsetting params in data files.\n")
             exit()
         merged_data_vals = subset_and_normalize_data(merged_data, feat_cols)
         norm_Y = normalize_expression(merged_data['expr_value']) 
@@ -93,7 +93,7 @@ def exec_cluster(args):
         uniq_clusters = list(set(fcluster))
         #cluster_plot_heatmap(merged_data_vals,norm_Y,linkage,cluster_tags,param_dict,param_data_dict,args)
         for data_type in data_feature_list:
-            feat_cols_tmp = select_features(merged_data_vals, args.anno_type, data_type)
+            feat_cols_tmp = select_features(merged_data_vals, args.plot_anno, data_type)
             cluster_plot_heatmap(merged_data_vals.loc[:,feat_cols_tmp],norm_Y,linkage,cluster_tags,param_dict,data_type,args)
         cluster_info = print_individual_cluster_averages(uniq_clusters,fcluster,merged_data,param_data_dict, param_dict, args)
         print_to_log(log_FH, "\n".join(cluster_info))
@@ -109,12 +109,12 @@ def exec_cluster_help(parser):
     parser_general.add_argument('--out_base', default='cluster_results', help='base name for output files and plots')
     parser_general.add_argument('--interp_data_path',
         default='intermediate_files', help='Path to directory with merged interpolation files from merge data step.')
-    parser_general.add_argument('--anno_type', default="tss", 
+    parser_general.add_argument('--plot_anno', default="tss", 
         choices=["tss", "enh","all"],
         help='region or gene annotation to print for clustering')
-    parser_general.add_argument('--data_type', default="mC", 
+    parser_general.add_argument('--plot_data_type', default="mC", 
         choices=["mC", "hmC", "other", "all"],
-        help='type of data to use for clustering. all uses all data from all annotations and overrides --anno_type')
+        help='type of data to use for clustering. all uses all data from all annotations and overrides --plot_anno')
     parser_general.add_argument('--logfile', default='cluster.log', help='log file')
     #parser.add_argument('--cluster_data', default="both", choices=["meth_only", "hmC_only", "both"],
     #    help="which signatures/data to cluster based on. (default: both)")
@@ -122,10 +122,10 @@ def exec_cluster_help(parser):
     parser_heatmap.add_argument('--color_max_meth_diff',default=0.2,type=float,
         help="Sets color bar scale for heatmap.")
     parser_clustering = parser.add_argument_group('clustering arguments')
-    parser_clustering.add_argument('--features', default="all",
+    parser_clustering.add_argument('--cluster_anno', default="tss",
         choices=["tss", "enh", "all"],
         help="Features to use for clustering.")
-    parser_clustering.add_argument('--features_data', default="all",
+    parser_clustering.add_argument('--cluster_data_type', default="mC",
         choices=["mC", "hmC", "all"],
         help="Data features to use for clustering.")
     parser_clustering.add_argument('--numClusters',default=3,type=int,

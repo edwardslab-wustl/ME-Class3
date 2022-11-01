@@ -116,8 +116,8 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
     plt.figtext(left_side - 60 / (fig_width * 100), tick_height, "Cluster", fontsize=fontsize2, horizontalalignment='center', rotation='vertical')
     #data_type = 'mC'
     x_labels = defaultdict(list)
-    if args.anno_type == 'tss':
-        anno_id = data_type + '-' + args.anno_type
+    if args.plot_anno == 'tss':
+        anno_id = data_type + '-' + args.plot_anno
         anno_label = 'TSS'
         left_label = param_dict[anno_id].left_label()
         right_label = param_dict[anno_id].right_label()
@@ -125,8 +125,8 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         #region_size = param_dict[anno_id].region_size
         x_labels = add_tss_labels(x_labels, left_side, right_side, left_label, right_label) 
         add_cat_labels(plt, ['TSS'], left_side, right_side, anno_label_height, fontsize2, rotate=False )
-    elif args.anno_type == 'enh':
-        anno_id = data_type + '-' + args.anno_type
+    elif args.plot_anno == 'enh':
+        anno_id = data_type + '-' + args.plot_anno
         enh_labels = pull_enh_labels(df)
         left_label = param_dict[anno_id].left_label()
         right_label = param_dict[anno_id].right_label()
@@ -134,7 +134,7 @@ def cluster_plot_heatmap(df, norm_Y, linkage, cluster_tags, param_dict, data_typ
         #region_size = param_dict[anno_id].region_size
         x_labels = add_enh_labels(x_labels, enh_labels, left_side, right_side, left_label, right_label )
         add_cat_labels(plt, enh_labels, left_side, right_side, anno_label_height, fontsize2, rotate=False )
-    elif args.anno_type == 'all':
+    elif args.plot_anno == 'all':
         num_tss_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'tss')])
         num_enh_feat = len([ x for x in df.columns if x.startswith(data_type + '-' + 'enh')])
         enh_labels = pull_enh_labels(df)
@@ -229,14 +229,14 @@ def print_individual_cluster_averages(uniq_clusters, fcluster, df, param_data_di
     data_list = []
     anno_list = []
     print_csv_flag = True
-    if args.data_type == 'all':
+    if args.plot_data_type == 'all':
         data_list = ['mC', 'hmC']
     else:
-        data_list = [ args.data_type ]
-    if args.anno_type == 'all':
+        data_list = [ args.plot_data_type ]
+    if args.plot_anno == 'all':
         anno_list = ['tss', 'enh']
     else:
-        anno_list = [ args.anno_type ]
+        anno_list = [ args.plot_anno ]
     for data_type in data_list:
         for anno_type in anno_list:
             anno_id = data_type + '-' + anno_type
@@ -333,7 +333,7 @@ def average_print_helper_meth_cpg(data,cluster,purity,expression_direction,x_dat
     sns.set(font_scale=1.8)
     sns.set_style("ticks")
     plt.figure(figsize=(8,5)) 
-    y_cols = select_features(data, args.anno_type, args.data_type)
+    y_cols = select_features(data, args.plot_anno, args.plot_data_type)
     y_data = data[y_cols].transpose(copy=True)
     y_data.reset_index(inplace=True)
     param = param_dict[ anno_id ]
