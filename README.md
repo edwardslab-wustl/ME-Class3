@@ -2,6 +2,7 @@
 ME-Class trains a model to use differential DNA methylation to predict expression changes in one or more pairs of samples. ME-Class3 is the latest updated version of ME-Class. This version can integrate methylation information from gene promoter and enhancer regions. It can also integrate data from both 5mC and 5hmC.  
 
 ## Requirements
+Tested on python 3.10.6. Will definitely not work with python < 3.6.
  * Python Packages
 	 *  dataclasses
 	 *  matplotlib
