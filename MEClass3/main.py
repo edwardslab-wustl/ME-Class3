@@ -43,7 +43,7 @@ def setup_subcommands():
                                 function=exec_overlap_genes_enhancers,
                                 help_function=exec_overlap_genes_enhancers_help,
                                 help = "Assigns enhancer annotations to genes",
-                                desc = "Assigns enhancer annotations to genes"))
+                                desc = "Assigns enhancer annotations to genes. Genes are oriented such that the + direction is the direction the gene is transcribed."))
     
     subcommands.append( Subcommand( name="interp", 
                                 function=exec_interp,
