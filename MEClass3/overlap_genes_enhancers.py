@@ -17,7 +17,7 @@ def exec_overlap_genes_enhancers(args):
     twin = args.twin_inp
     gene_file = args.anno_file
     enhancer_file = args.enh_file
-    path_to_input = getcwd()
+    #path_to_input = getcwd()
     delimiter = 1000 #index size
  
     with open(args.logfile, 'w') as log_FH:   
