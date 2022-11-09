@@ -49,6 +49,7 @@ class GeneAnno:
     exonCount: int
     strand: str
     chr: str
+    symbol: str
     
     def gene_length(self) -> int:
         return self.txEnd - self.txStart
@@ -78,6 +79,7 @@ class RegionAnno:
     strand: str
     gene_txStart: int
     gene_txEnd: int
+    connect_score: 0
     
     def region_length(self) -> int:
         return self.end - self.start
@@ -251,16 +253,18 @@ def read_gene_file(file):
         for line in FH:
             if not line.startswith('#'):
                 items = line.strip().split()
-                gene_list.append( GeneAnno( items[1], #geneID
-                                            int(items[4]), #txStart
-                                            int(items[5]), #txEnd
-                                            int(items[6]), #cdsStart
-                                            int(items[7]), #cdsEnd
-                                            items[13], #cdsStartStat
-                                            items[14], #cdsEndStat
-                                            int(items[8]), #exonCount
-                                            items[3], #strand
-                                            items[2] )) #chr
+                gene_list.append( GeneAnno( items[1],  # geneID
+                                            int(items[4]),  # txStart
+                                            int(items[5]),  # txEnd
+                                            int(items[6]),  # cdsStart
+                                            int(items[7]),  # cdsEnd
+                                            items[13],  # cdsStartStat
+                                            items[14],  # cdsEndStat
+                                            int(items[8]),  # exonCount
+                                            items[3],  # strand
+                                            items[2],  # chr
+                                            items[12],  # symbol
+                                        )) #chr
     return gene_list
 
 def read_bed_file(file):
@@ -271,3 +275,6 @@ def read_bed_file(file):
         with open(file, 'r') as FH:
             bed_file_lines = FH.readlines()
     return bed_file_lines
+
+
+          
