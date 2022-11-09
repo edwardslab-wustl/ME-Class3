@@ -131,3 +131,9 @@ dmypy.json
 
 # custom
 example/
+.vscode/
+meclass3_min_example_chr17/
+.vscode/launch.json
+meclass3_min_example_chr17.tar.gz
+MEClass3/old_interp_code.py
+MEClass3/classifier_old.py

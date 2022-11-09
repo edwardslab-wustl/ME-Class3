@@ -1,8 +1,8 @@
 
-import MEClass3.core
+import MEClass3.main
 
 def main():
-    MEClass3.core.main()
+    MEClass3.main.main()
 
 if __name__ == '__main__':
 #    import meclass3

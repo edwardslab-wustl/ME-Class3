@@ -1,0 +1,234 @@
+
+
+    with open(reg_fofn,'r') as reg_fofn_file:
+        reg_fofn_lines = reg_fofn_file.readlines()
+    #dict_gene, dict_gene_out = {}, {}
+    #dict_re, dict_re_out = {}, {}
+    for item in reg_fofn_lines:
+        if item.startswith('#'):
+            continue
+        file_name = (item.strip().split()[1])
+        file_id = (item.strip().split()[1]).strip('.gene')
+        with open(file_name,'r') as reg_file:
+            file_lines_prefltrd = reg_file.readlines()
+#        reg_file.close()
+        # Filter Genes
+        # 1. Ambiguous or incomplete TSS annotation
+        # 2. Genes shorter than 5 kb.
+        # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
+        # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
+        # 5. Alternative Promoters 
+        # 6. cdsStartStat == cmpl; cdsEndStat == cmpl;
+        # 7. differentially expressed genes >=2-Fold difference after floor of five.  
+        if item.strip().split()[0] == 'gene':
+            file_lines = []
+            for line in file_lines_prefltrd:
+                if line.startswith('#'): # header
+                    continue
+                lines_items = line.strip().split()
+                txStart = int( lines_items[4] )
+                txEnd = int( lines_items[5] )
+                cdsStart = int( lines_items[6] )
+                cdsEnd = int( lines_items[7] )
+                exonCount = int( lines_items[8] )
+                cdsStartStat = lines_items[13]
+                cdsEndStat = lines_items[14]
+                gene_length = txEnd - txStart 
+                if gene_length < 5000: #Genes shorter than 5 kb.
+                    continue
+                if (cdsStartStat != 'cmpl') or (cdsEndStat != 'cmpl'):
+                    continue
+                file_lines.append(line)
+            open(file_id+'_'+args.tag_inp+'_fltrd.gene', 'w').write(''.join(file_lines))
+        if item.strip().split()[0] == 'gene':
+            dict_gene[file_id] = file_lines
+#            dict_gene[file_id] = file_lines_prefltrd
+            dict_gene_out[file_id] = []
+            dict_gene_out[file_id].append('gene_id-sample_name') # write header
+            for pos in range(num_interp_points):
+                dict_gene_out[file_id].append(',ftss_'+str(pos))
+        if item.strip().split()[0] == 're':
+            dict_re[file_id] = file_lines_prefltrd
+            dict_re_out[file_id] = []
+            dict_re_out[file_id].append('gene_id-sample_name') # write header
+            for pos in range(num_interp_points):
+                dict_re_out[file_id].append(',f'+''.join(file_id.split('_'))+'_'+str(pos))    
+#        del file_name, file_id, file_lines, file_lines_prefltrd
+    # Sample Information.
+    #with open(sample_fofn,'r') as sample_fofn_file:
+    #    sample_fofn_lines = sample_fofn_file.readlines()
+#    sample_fofn_file.close()
+    dict_sample = {}
+    #if args.geneSelect: #gene_select: # for gene selection 
+    #    sys.stdout.write('Gene Selection has been chosen. A third column in sample_fofn must have gene_ids')
+    #    dict_sample_gene_list = {} 
+    #for item in sample_fofn_lines:
+    #    if item.startswith('#'):
+    #        continue
+    #    dict_sample[item.strip().split()[0]] = item.strip().split()[1]
+    #    if args.geneSelect: #gene_select:
+    #        dict_sample_gene_list[item.strip().split()[0]] = item.strip().split()[2] #
+    for sample_pair in pair_list:
+        dict_sample[sample_pair.tag1] = sample_pair.file1
+        dict_sample[sample_pair.tag2] = sample_pair.file2
+    for sample_id, sample_file in dict_sample.items():
+    #    if args.geneSelect: #gene_select: #
+    #        with open(dict_sample_gene_list[sample_id], 'r') as gene_list_file:
+    #           gene_list_lines = gene_list_file.readlines()
+    #       gene_list_file.close()
+    #       gene_id_list = []
+    #       for item in gene_list_lines:
+    #           gid = item.strip().split()[0]
+    #           if gid.startswith('#'):
+    #               continue
+    #           gene_id_list.append(gid)
+    #       gene_id_list = set(gene_id_list)
+        dict_bed = {}
+        #sys.stdout.write(sample_id+'\n')
+        print_to_log(log_FH, sample_id+'\n)
+        if re.search(".gz$", sample_file):
+            with gzip.open(sample_file, 'rt') as bed_file:
+                bed_file_lines = bed_file.readlines()
+        else:
+            with open(sample_file, 'r') as bed_file:
+                bed_file_lines = bed_file.readlines()
+        chr_track = 'chr00'
+        for line in bed_file_lines:
+            if line.split()[0] != chr_track:
+                chr_track = line.split()[0]
+                dict_bed[chr_track] = {}
+                dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
+                continue
+            dict_bed[chr_track][int(line.split()[1])] = float(line.split()[3])
+        del bed_file_lines[:]
+        # memory use
+        sys.stdout.write('Memory use: '+str(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1000)+'MB\n')
+        for file_id, file_lines in dict_gene.items(): # gene
+            reg_type = 'gene'
+            for reg_info in file_lines:
+                reg_items = reg_info.strip().split()
+                cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+                if reg_items[1].startswith('N'):
+                    gene_id, chrom, strand, tx_start, tx_end = \
+                        reg_items[1], reg_items[2], reg_items[3], int(reg_items[4]), int(reg_items[5])
+                    tss = tx_start if strand == '+' else tx_end
+                    tes = tx_end if strand == '+' else tx_start
+                if reg_items[0].startswith('ENSG'): # Ensembl
+                    gene_id, chrom, tx_start, tx_end = \
+                        reg_items[0], reg_items[1], int(reg_items[2]), int(reg_items[3])
+                    strand = '-' if reg_items[4] == '-1' else '+'
+                    tss = tx_start if strand == '+' else tx_end
+                    tes = tx_end if strand == '+' else tx_start 
+                if args.geneSelect and ( gene_id not in gene_id_list ): # gene selection
+                    continue
+                sys.stdout.write(gene_id+'\n')
+                # ----------------------------------------------------------------------------
+                # Methylation based gene filters
+                # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
+                # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
+                for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
+                    try:
+                        dmet_tmp.append(dict_bed[chrom][cpos])
+                        cpos_tmp.append(cpos)
+                    except KeyError:
+                        continue
+                if len(dmet_tmp) < args.min_gene_meth:
+                    sys.stderr.write(gene_id + ' has < ' +  str(args.min_gene_meth)  + ' CpGs assayed in ' + sample_id + '\n')
+                    continue
+                if max(dmet_tmp) < 0.2:
+                    sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
+                    continue
+                #-----------------------------------------------------------------------------    
+                if not args.flankNorm: # Endpoint correction will be used in this case
+                    anchor_window = 0
+#                if args.flankNorm:
+                for cpos in range( tx_start-(interp_bin+anchor_window), tx_end+(interp_bin+anchor_window)+1 ):
+                    try:
+                        dmet_dat.append(dict_bed[chrom][cpos])
+                        cpos_dat.append(cpos)
+                    except KeyError:
+                        continue
+                # Missing anchor            
+                if args.flankNorm and \
+                    (( cpos_dat[0] not in range( tx_start-(interp_bin+anchor_window), tx_start-interp_bin ) ) or \
+                    ( cpos_dat[-1] not in range( tx_end+interp_bin+1, tx_end+(interp_bin+anchor_window)+1 ) )):
+                    sys.stderr.write(gene_id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+                    continue 
+                # Gather interpolated data
+                interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, tx_start, tx_end, strand, reg_type, args).dat_proc()
+                
+                # cross-check number of interpolated features
+                if len(interpolated_dmet_data) != num_interp_points:
+                    sys.stdout.write('Inconsistent number of interpolation features!')
+                    sys.exit() # Exit if number is inconsistent 
+                # Write data
+#                if len(interpolated_dmet_data) > 0:
+                dict_gene_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
+                dict_gene_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
+                del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+        # Regulatory Elements
+        for file_id, file_lines in dict_re.items(): # regulatory elements
+            reg_type = 're'
+            interp_bin = 500 # for model gene plots
+            for reg_info in file_lines:
+                reg_items = reg_info.strip().split()
+                cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
+                gene_id, chrom, strand, reg_start, reg_end = \
+                        reg_items[0], reg_items[1], reg_items[2], int(reg_items[5]), int(reg_items[6])
+                sys.stdout.write(gene_id+'\n')
+                                # ----------------------------------------------------------------------------
+                                # Methylation based gene filters
+                                # 3. Genes with <2 CpGs assayed within +/-5kb of the TSS
+                                #
+                for cpos in range( (reg_start-interp_bin), (reg_end+interp_bin)+1 ):
+                    try:
+                        dmet_tmp.append(dict_bed[chrom][cpos])
+                        cpos_tmp.append(cpos)
+                    except KeyError:
+                        continue
+                                #
+                if len(dmet_tmp) < args.min_re_meth:
+                    sys.stderr.write(gene_id + ' has < ' +  str(args.min_re_meth) \
+                                 + ' CpGs assayed in ' + sample_id + '\n')
+                    continue
+                                #
+#                if max(dmet_tmp) < 0.2
+#                    sys.stderr.write(gene_id + ' has < 0.2 maximum methylation change in ' + sample_id + '\n')
+#                    continue
+                                #-----------------------------------------------------------------------------
+                if not args.flankNorm:
+                    anchor_window = 0
+#                if args.flankNorm:
+                for cpos in range( reg_start-(interp_bin+anchor_window), reg_end+(interp_bin+anchor_window)+1 ):
+                    try:
+                        dmet_dat.append(dict_bed[chrom][cpos])
+                        cpos_dat.append(cpos)
+                    except KeyError:
+                        continue
+
+                # Missing anchor
+                if args.flankNorm and \
+                    (( cpos_dat[0] not in range( reg_start-(interp_bin+anchor_window), reg_start-interp_bin ) ) or \
+                    ( cpos_dat[-1] not in range( reg_end+interp_bin+1, reg_end+(interp_bin+anchor_window)+1 ) )):
+                    sys.stderr.write(gene_id + ' has not CpGs in anchor windows in ' + sample_id + '\n')
+                    continue
+
+                # Gather interpolated data
+                interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, reg_start, reg_end, strand, reg_type, args).dat_proc()
+                # cross-check number of interpolated features
+                if len(interpolated_dmet_data) != num_interp_points:
+                    sys.stdout.write(str(len(interpolated_dmet_data)))
+                    sys.stdout.write('Inconsistent number of interpolation features!')
+                    sys.exit()
+                # Write data
+                #if len(interpolated_dmet_data) > 0:
+                dict_re_out[file_id].append('\n'+gene_id+'-'+sample_id+',')
+                dict_re_out[file_id].append(','.join(str(item) for item in interpolated_dmet_data))
+                del dmet_dat[:], cpos_dat[:], dmet_tmp[:], cpos_tmp[:]
+        dict_bed.clear()
+        del dict_bed
+    # Write data to a file
+    for file_id, out_lines in dict_gene_out.items(): 
+         open(args.tag_inp+'_gene_interp.csv', 'w').write(''.join(out_lines))
+    for file_id, out_lines in dict_re_out.items():
+        open(file_id+'_'+args.tag_inp+'_re_interp.csv', 'w').write(''.join(out_lines))
