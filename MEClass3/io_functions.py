@@ -49,7 +49,8 @@ class GeneAnno:
     exonCount: int
     strand: str
     chr: str
-    symbol: str
+    symbol: str = "na"
+    ensg_id: str = "na"
     
     def gene_length(self) -> int:
         return self.txEnd - self.txStart
@@ -79,14 +80,25 @@ class RegionAnno:
     strand: str
     gene_txStart: int
     gene_txEnd: int
-    connect_score: 0
+    connect_score: int = 0
     
     def region_length(self) -> int:
         return self.end - self.start
     
     def mid_point(self) -> int:
         return round(float(self.end - self.start) / 2)
- 
+    
+    def format_output(self, sep="\t") -> list:
+        #out = sep.join([self.gene, self.chr, self.strand,
+        #                str(self.gene_txStart), str(self.gene_txEnd),
+        #                str(self.start), str(self.end)])
+        out = [self.gene, self.chr, self.strand,
+               str(self.gene_txStart), str(self.gene_txEnd),
+               str(self.start), str(self.end)]
+        return out
+        
+        
+        
 #### functions ####
 def format_args_to_print( args ):
     result = '##### Input Params #####\n'

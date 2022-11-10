@@ -3,11 +3,8 @@ import argparse
 
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
+from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_score
 from overlap_genes_enhancers_functions import overlap_enh_genes_by_distance
-from overlap_genes_enhancers_functions import read_geneHancer
-from overlap_genes_enhancers_functions import assign_enh_to_gene_by_score
-from overlap_genes_enhancers_functions import format_enh_anno
-from overlap_genes_enhancers_functions import add_gene_info
 
 def exec_overlap_genes_enhancers(args):
     with open(args.logfile, 'w') as log_FH:   
@@ -23,11 +20,17 @@ def exec_overlap_genes_enhancers(args):
                                                     args.promoter_region,
                                                     args.index_size)
         elif args.type == 'genehancer_score':
-            enh_dict = read_geneHancer(args.enh_file)
-            enh_dict_list = assign_enh_to_gene_by_score(enh_dict, args.score_num_enh)
-            enh_dict_anno, total_num, convert_num = add_gene_info(enh_dict, args.gene_file)
-            print_to_log(log_FH, f"converted ids for {convert_num} genes out of {total_num} total genes.")
-            results = format_enh_anno(enh_dict_list, enh_dict_anno)
+            results = overlap_enh_genes_by_score(args.gene_file,
+                                                    args.enh_file,
+                                                    "genehancer",
+                                                    args.score_num_enh,
+                                                    "enh")
+        elif args.type == 'enhancerAtlas_score':
+            results = overlap_enh_genes_by_score(args.gene_file,
+                                                    args.enh_file,
+                                                    "enhancerAtlas",
+                                                    args.score_num_enh,
+                                                    "enh")
         out_data = [ "\t".join(result) for result in results ]
         with open(args.outFile, 'w') as out_FH:
             out_FH.write("\n".join(out_data) + "\n")
@@ -41,7 +44,7 @@ def exec_overlap_genes_enhancers_help(parser):
         default=argparse.SUPPRESS,
         help='enhancer annotation file')
     parser.add_argument('-t', '--type', default='distance',
-        choices=['distance', 'genehancer_score'],
+        choices=['distance', 'genehancer_score', 'enhancerAtlas_score'],
         help='type of enhancer file and matching metric. Distance expects bed \
             file of enhancer locations. genehancer_score expects genehancer \
             .csv file with genehancer gene-enhancer connectivity info.' )
