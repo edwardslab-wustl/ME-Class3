@@ -14,6 +14,7 @@ from MEClass3.merge_data import exec_merge_data, exec_merge_data_help
 from MEClass3.cluster import exec_cluster, exec_cluster_help
 from MEClass3.plot_interp import exec_plot_interp, exec_plot_interp_help
 from MEClass3.plot_performance import exec_plot_performance, exec_plot_performance_help
+from MEClass3.intersect_gene_lists import exec_intersect_gene_lists, exec_intersect_gene_lists_help
 
 from MEClass3.pull_gene_list import exec_pull_gene_list, exec_pull_gene_list_help
 
@@ -56,6 +57,12 @@ def setup_subcommands():
                                 help_function=exec_merge_data_help,
                                 help = "Merge methylation signatures and expression data",
                                 desc = "Merge interpolated methylation signatures and expression data to create input files for classify step."))
+    
+    subcommands.append( Subcommand( name="intersect_genes", 
+                                function=exec_intersect_gene_lists,
+                                help_function=exec_intersect_gene_lists_help,
+                                help = "Intersect two merged datasets to keep only common genes",
+                                desc = "Intersect two merged datasets to keep only common genes. Useful for standardizing data files to compare classifier performance."))
 
     subcommands.append( Subcommand( name="classify", 
                                 function=exec_classify,

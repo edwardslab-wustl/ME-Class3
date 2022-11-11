@@ -1,5 +1,5 @@
 
-from MEClass3.combine_enhancer_atlas import read_enh_atlas_file
+#from MEClass3.combine_enhancer_atlas import read_enh_atlas_file
 from MEClass3.combine_enhancer_atlas import read_geneHancer_2
 from MEClass3.io_functions import read_gene_file
 from MEClass3.overlap_genes_enhancers_functions import index_gene_list
