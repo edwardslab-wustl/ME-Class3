@@ -40,6 +40,7 @@ class GeneEnhSet:
         return min_enh        
     
     def add_gene_info(self, gene_dict):
+        new_enh_set = set()
         for enh in self.enh_set:
             if enh.gene in gene_dict:
                 gene = gene_dict[enh.gene]
@@ -50,8 +51,10 @@ class GeneEnhSet:
                                     gene.txStart,
                                     gene.txEnd,
                                     enh.connect_score)
-                self.discard_enh(enh)
-                self.add_enh(new_enh)
+                new_enh_set.add(new_enh)
+            else:
+                new_enh_set.add(enh)
+        self.enh_set = new_enh_set       
         return
  
 

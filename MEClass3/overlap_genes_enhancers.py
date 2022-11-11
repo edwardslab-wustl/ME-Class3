@@ -4,7 +4,7 @@ import argparse
 from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_score
-from overlap_genes_enhancers_functions import overlap_enh_genes_by_distance
+from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance
 
 def exec_overlap_genes_enhancers(args):
     with open(args.logfile, 'w') as log_FH:   
