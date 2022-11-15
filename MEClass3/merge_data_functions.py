@@ -1,10 +1,10 @@
 
 import pandas as pd
-import numpy as np
+#import numpy as np
 
 from MEClass3.io_functions import read_params_from_interp_2
 from MEClass3.cluster_functions import select_cluster_features
-from MEClass3.io_functions import eprint
+#from MEClass3.io_functions import eprint
 
 def add_interp_header(file, header_list, args):
     with open(file, 'r') as FH:
@@ -24,7 +24,8 @@ def add_interp_header(file, header_list, args):
 
 def add_tss_interp(df_interp, file, data_type, args):
     df_merged = ''
-    tss_interp = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'gene_id-sample_name': str})
+    #tss_interp = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'gene_id-sample_name': str})
+    tss_interp = pd.read_csv(file, comment='#')
     param_data_dict, param_dict = read_params_from_interp_2(file)
     feat_cols = select_cluster_features(tss_interp, param_data_dict, param_dict, 'tss', data_type, args)
     feat_cols.append('gene_id-sample_name')
@@ -49,7 +50,8 @@ def fix_column_headers(df, tag):
         
 def add_enh_interp(df_interp, file, data_type, args):
     df_merged = ''
-    enh_interp_all = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'enh_loc-gene_id-sample_name': str})
+    #enh_interp_all = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'enh_loc-gene_id-sample_name': str})
+    enh_interp_all = pd.read_csv(file, comment='#') 
     param_data_dict, param_dict = read_params_from_interp_2(file)
     enh_interp_all['enh_loc'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[0])
     enh_interp_all['gene_id-sample_name'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[1])
