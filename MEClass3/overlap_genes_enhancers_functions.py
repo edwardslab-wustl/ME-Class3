@@ -22,7 +22,7 @@ class GeneEnhSet:
         return
     
     def top_n_enh(self, n) -> list:
-        return_list = sorted(self.enh_set, key=lambda x: x.connect_score)
+        return_list = sorted(self.enh_set, reverse=True, key=lambda x: x.connect_score)
         if self.num_enh() > n:
             return_list = return_list[0:n]
         return return_list
@@ -69,17 +69,17 @@ def overlap_enh_genes_by_score(gene_file, enhancer_file, enh_type, num_enh, base
             tmp_results = read_enh_atlas_file(file, tmp_results)
         gene_list = read_gene_file(gene_file)
         gene_dict = index_gene_list(gene_list)
-        for symbol, result in tmp_results.items():
-            result.add_gene_info(gene_dict)
-            if result.num_enh() >= num_enh:
-                count = 0
-                for enh in result.top_n_enh(num_enh):
-                    count += 1
-                    label = base_label + '_' + str(count)
-                    out_list = [label]
-                    out_list.extend(enh.format_output())
-                    results.append(out_list)
-                    #results.append(f"{label}\t{enh.format_output()}\n")
+    for symbol, result in tmp_results.items():
+        result.add_gene_info(gene_dict)
+        if result.num_enh() >= num_enh:
+            count = 0
+            for enh in result.top_n_enh(num_enh):
+                count += 1
+                label = base_label + '_' + str(count)
+                out_list = [label]
+                out_list.extend(enh.format_output())
+                results.append(out_list)
+                #results.append(f"{label}\t{enh.format_output()}\n")
     return results
 
 
@@ -194,7 +194,7 @@ def read_enh_atlas_file(file, result_dict, label='enh_', score_threshold=0.):
             line_data = line.strip().split()
             score = float(line_data[1])
             if score >= score_threshold:
-                (coord, gene_info) = line_data[0].split('_')
+                (coord, gene_info) = line_data[0].split('_', 1)
                 (ensg_id, symbol, gene_chrom, tss, strand) = gene_info.split('$')
                 (enh_chr, position_range) = coord.split(":")
                 (enh_start, enh_end) = position_range.split('-')
