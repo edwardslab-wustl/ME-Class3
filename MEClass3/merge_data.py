@@ -1,4 +1,5 @@
 
+import sys
 import argparse
 
 import numpy as np
@@ -23,40 +24,14 @@ def exec_merge_data(args):
         df_expr_all = ( pd.read_table(expr_file, index_col=False) ).set_index('gene_id')
         for sample_pair in pair_list:
             print_to_log(log_FH, "processing " + sample_pair.name + "\n")
-            df_expr = df_expr_all.loc[:, [sample_pair.tag1, sample_pair.tag2]]
             df_interp = ''
             header_list = list()
-            if args.mC_tss:
-                interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
-                print_to_log(log_FH, f"\tadding mC tss interp data: " + interp_file + "\n")
-                df_interp = add_tss_interp(df_interp, interp_file, 'mC', args)
-                header_list = add_interp_header(interp_file, header_list, args)
-            if args.mC_enh:
-                interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
-                print_to_log(log_FH, "\tadding mC enh interp data: " + interp_file + "\n")
-                df_interp = add_enh_interp(df_interp, interp_file, 'mC', args)
-                header_list = add_interp_header(interp_file, header_list, args)
-            if args.hmC_tss:
-                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_tss_base + ".csv"
-                print_to_log(log_FH, f"\tadding hmC tss interp data: " + interp_file + "\n")
-                df_interp = add_tss_interp(df_interp, interp_file, 'hmC', args)
-                header_list = add_interp_header(interp_file, header_list, args)
-            if args.hmC_enh:
-                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_enh_base + ".csv"
-                print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
-                df_interp = add_enh_interp(df_interp, interp_file, 'hmC', args)
-                header_list = add_interp_header(interp_file, header_list, args)
-            df_interp['gene_id'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[0])
-            df_interp['sample_name'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[1])    
-            df_interp = df_interp.set_index('gene_id-sample_name')
-            # Remove Duplicates
-            # df_interp = df_interp.groupby(df_interp.index).first()
+            df_expr = df_expr_all.loc[:, [sample_pair.tag1, sample_pair.tag2]]
             # Remove Duplicates
             # df_expr = df_expr.groupby(df_expr.index).first()
             if args.floor_expr:    # Floor expression values for selected cell types
                 df_expr.loc[df_expr[sample_pair.tag1] < expr_floor_value, sample_pair.tag1] = expr_floor_value
                 df_expr.loc[df_expr[sample_pair.tag2] < expr_floor_value, sample_pair.tag2] = expr_floor_value
-                
             if args.diff_expr_flag == 'foldChange':   
                 df_expr[sample_pair.name] = np.where( df_expr[sample_pair.tag1] > df_expr[sample_pair.tag2],
                                                      -(df_expr[sample_pair.tag1] / df_expr[sample_pair.tag2]),
@@ -67,7 +42,43 @@ def exec_merge_data(args):
                 err_msg = f"invalid --diff_expr_flag: {args.diff_expr_flag}\nCheck parameters and rerun.\n" 
                 eprint(err_msg)
                 print_to_log(log_FH, err_msg)
-                exit()
+                sys.exit()
+            if args.filter_diff_expr:
+                gene_keep_set= convert_expr_to_set(df_expr[sample_pair.name], args.expr_cutoff)
+            if args.mC_tss:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_tss_base + ".csv"
+                print_to_log(log_FH, f"\tadding mC tss interp data: " + interp_file + "\n")
+                if args.filter_diff_expr:
+                    interp_file = filter_interp_file(interp_file, gene_keep_set,'TSS')
+                df_interp = add_tss_interp(df_interp, interp_file, 'mC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
+            if args.mC_enh:
+                interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
+                print_to_log(log_FH, "\tadding mC enh interp data: " + interp_file + "\n")
+                if args.filter_diff_expr:
+                    interp_file = filter_interp_file(interp_file, gene_keep_set,'ENH')
+                df_interp = add_enh_interp(df_interp, interp_file, 'mC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
+            if args.hmC_tss:
+                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_tss_base + ".csv"
+                print_to_log(log_FH, f"\tadding hmC tss interp data: " + interp_file + "\n")
+                if args.filter_diff_expr:
+                    interp_file = filter_interp_file(interp_file, gene_keep_set,'TSS')
+                df_interp = add_tss_interp(df_interp, interp_file, 'hmC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
+            if args.hmC_enh:
+                interp_file = args.file_path + "/" + sample_pair.name + args.hmC_enh_base + ".csv"
+                print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
+                if args.filter_diff_expr:
+                    interp_file = filter_interp_file(interp_file, gene_keep_set,'ENH')
+                df_interp = add_enh_interp(df_interp, interp_file, 'hmC', args)
+                header_list = add_interp_header(interp_file, header_list, args)
+            df_interp['gene_id'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[0])
+            df_interp['sample_name'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[1])    
+            df_interp = df_interp.set_index('gene_id-sample_name')
+            # Remove Duplicates
+            # df_interp = df_interp.groupby(df_interp.index).first()
+
             df_interp['expr_value'] = 0.0  # Float type
             df_interp['expr_flag'] = 0      # int type
             for gene_item in df_interp.index:
@@ -93,6 +104,40 @@ def exec_merge_data(args):
                 for header in header_list:
                     out_FH.write(header)
                 out_FH.write(out_csv_data)
+
+def filter_interp_file(file, keep_set, feat_type):
+    tmp_file = f"{file}.tmp"
+    with open(tmp_file, 'w') as OUT_FH:
+        with open(file, 'r') as IN_FH:
+            for line in IN_FH:
+                if line.startswith('#'):
+                    OUT_FH.write(line)
+                elif line.startswith('enh_loc-gene_id-sample_name'):
+                    OUT_FH.write(line)
+                elif line.startswith('gene_id-sample_name'):
+                    OUT_FH.write(line)
+                else:
+                    gene_id = ''
+                    if feat_type == 'TSS':
+                        gene_id = line.split('-')[0]
+                    elif feat_type == 'ENH':
+                        gene_id = line.split('-')[1]
+                    if gene_id in keep_set:
+                        OUT_FH.write(line)
+    return tmp_file
+
+                
+    
+def convert_expr_to_set(df, cutoff):
+    return_set = set()
+    tmp_set = {gene_id for gene_id in df.index if df[gene_id] >= cutoff }
+    return_set.update(tmp_set)
+    tmp_set = {gene_id for gene_id in df.index if df[gene_id] <= -cutoff }
+    return_set.update(tmp_set)
+    return return_set
+    
+    
+    
                 
 def exec_merge_data_help(parser):
     parser_required = parser.add_argument_group('required arguments')
@@ -103,6 +148,7 @@ def exec_merge_data_help(parser):
     parser_required.add_argument('-e', '--expr',
         default=argparse.SUPPRESS,
         required=True, help='Name of expression file')
+    parser.add_argument('--filter_diff_expr', action='store_true', default=False, help='pre-filter to only diff expr genes')
     parser_data_select = parser.add_argument_group('data selection arguments')
     parser_data_select.add_argument('--mC_tss', action='store_true', default=False, help='Use tss interpolation data')
     parser_data_select.add_argument('--mC_enh', action='store_true', default=False, help='Use enh interpolation data')

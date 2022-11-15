@@ -1,8 +1,10 @@
 
 import pandas as pd
+import numpy as np
 
 from MEClass3.io_functions import read_params_from_interp_2
 from MEClass3.cluster_functions import select_cluster_features
+from MEClass3.io_functions import eprint
 
 def add_interp_header(file, header_list, args):
     with open(file, 'r') as FH:
@@ -22,7 +24,7 @@ def add_interp_header(file, header_list, args):
 
 def add_tss_interp(df_interp, file, data_type, args):
     df_merged = ''
-    tss_interp = pd.read_csv(file, comment='#')
+    tss_interp = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'gene_id-sample_name': str})
     param_data_dict, param_dict = read_params_from_interp_2(file)
     feat_cols = select_cluster_features(tss_interp, param_data_dict, param_dict, 'tss', data_type, args)
     feat_cols.append('gene_id-sample_name')
@@ -47,7 +49,7 @@ def fix_column_headers(df, tag):
         
 def add_enh_interp(df_interp, file, data_type, args):
     df_merged = ''
-    enh_interp_all = pd.read_csv(file, comment='#')
+    enh_interp_all = pd.read_csv(file, comment='#', dtype=np.float16, converters = {'enh_loc-gene_id-sample_name': str})
     param_data_dict, param_dict = read_params_from_interp_2(file)
     enh_interp_all['enh_loc'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[0])
     enh_interp_all['gene_id-sample_name'] = enh_interp_all['enh_loc-gene_id-sample_name'].apply(lambda x: x.split('-',1)[1])
@@ -59,6 +61,10 @@ def add_enh_interp(df_interp, file, data_type, args):
         feat_cols = select_cluster_features(df_tmp_interp, param_data_dict, param_dict, 'enh', data_type, args)
         feat_cols.extend(['enh_loc-gene_id-sample_name', 'gene_id-sample_name'])
         df_tmp_interp = df_tmp_interp.loc[:,feat_cols]
+        df_tmp_interp.drop_duplicates(subset=None, keep='first', inplace=True)
+        #eprint(f"enh_loc: {enh_loc}")
+        #eprint(f"tmp shape: {df_tmp_interp.shape}")
+        #eprint(f"merged shape: {df_merged.shape}")
         if len(df_merged) == 0:
             df_merged = df_tmp_interp
         else:
@@ -67,5 +73,8 @@ def add_enh_interp(df_interp, file, data_type, args):
                 tmp.drop('enh_loc', axis=1, inplace=True)
             df_merged = df_merged.merge(tmp, on='gene_id-sample_name')
             del tmp
+        df_merged.drop_duplicates(subset=None, keep='first', inplace=True)
+        #df_merged.to_csv(f"{file}.{enh_loc}.test")
+        del feat_cols
         del df_tmp_interp
     return df_merged
