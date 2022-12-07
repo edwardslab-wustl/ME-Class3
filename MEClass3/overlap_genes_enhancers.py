@@ -5,6 +5,7 @@ from MEClass3.io_functions import print_to_log
 from MEClass3.io_functions import format_args_to_print
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_score
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance
+from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance_2
 
 def exec_overlap_genes_enhancers(args):
     with open(args.logfile, 'w') as log_FH:   
@@ -31,6 +32,16 @@ def exec_overlap_genes_enhancers(args):
                                                     "enhancerAtlas",
                                                     args.score_num_enh,
                                                     "enh")
+        elif args.type == 'enhancerAtlas_dist':
+            results = overlap_enh_genes_by_distance_2(args.gene_file,
+                                                      args.enh_file,
+                                                      args.up_start_idx,
+                                                      args.up_end_idx,
+                                                      args.dn_start_idx,
+                                                      args.dn_end_idx,
+                                                      args.promoter_region,
+                                                      args.index_size,
+                                                      args.max_distance)
         out_data = [ "\t".join(result) for result in results ]
         with open(args.outFile, 'w') as out_FH:
             out_FH.write("\n".join(out_data) + "\n")
@@ -44,7 +55,7 @@ def exec_overlap_genes_enhancers_help(parser):
         default=argparse.SUPPRESS,
         help='enhancer annotation file')
     parser.add_argument('-t', '--type', default='distance',
-        choices=['distance', 'genehancer_score', 'enhancerAtlas_score'],
+        choices=['distance', 'genehancer_score', 'enhancerAtlas_score', 'enhancerAtlas_dist'],
         help='type of enhancer file and matching metric. Distance expects bed \
             file of enhancer locations. genehancer_score expects genehancer \
             .csv file with genehancer gene-enhancer connectivity info.' )
@@ -53,6 +64,8 @@ def exec_overlap_genes_enhancers_help(parser):
         help='output file')
     parser.add_argument('--logfile',  default='enh_gene_overlap.log', help='log file')
     parser_distance = parser.add_argument_group('distance arguments')
+    parser_distance.add_argument('--max_distance', type=int, default=100000000, 
+        help='max distance an enhancer can be away from the TSS. Only used for distance metrics.')
     parser_distance.add_argument('--dn_start_idx', type=int, default=1, 
         help='downstream start index. 1 means to start with the closest enhancer downstream of the TSS.')
     parser_distance.add_argument('--dn_end_idx', type=int, default=5, 

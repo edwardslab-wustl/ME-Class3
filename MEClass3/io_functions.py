@@ -68,6 +68,68 @@ class GeneAnno:
         else:
             tes = self.txStart
         return tes
+
+    def identify_nearest_up_objects(self, number, exclude_range, limit, object_index) -> list:
+        tss = self.tss()
+        curr_index = int(tss / object_index.index_range)
+        result_list = []
+        continue_flag = True
+        init_flag = True
+        if self.chr in object_index.reg_index:
+            object_index_chr = object_index.reg_index[self.chr]
+            max_index = max(object_index_chr.keys())
+            while(continue_flag):
+                if curr_index in object_index_chr:
+                    #tmp = object_index.reg_index[self.chr]
+                    #print(tmp)
+                    #tmp_list = [ x.start for x in object_index_chr[curr_index] ]
+                    for obj in sorted(object_index_chr[curr_index],key = lambda x: x.start):
+                        if (obj.start - tss > limit):
+                            continue_flag = False
+                        elif (len(result_list) >= number):
+                            continue_flag = False
+                        elif obj.start > tss + exclude_range:
+                            if init_flag:
+                                result_list.append(obj)
+                                prior_obj = obj
+                                init_flag = False
+                            elif prior_obj.start != obj.start and prior_obj.end != obj.end:
+                                result_list.append(obj)
+                                prior_obj = obj
+                curr_index += 1
+                if curr_index > max_index:
+                    continue_flag = False
+        return result_list
+    
+    def identify_nearest_dn_objects(self, number, exclude_range, limit, object_index) -> list:
+        tss = self.tss()
+        curr_index = int(tss / object_index.index_range)
+        result_list = []
+        continue_flag = True
+        init_flag = True
+        if self.chr in object_index.reg_index:
+            object_index_chr = object_index.reg_index[self.chr]
+            min_index = min(object_index_chr.keys())
+            while(continue_flag):
+                if curr_index in object_index_chr:
+                    for obj in sorted(object_index_chr[curr_index],reverse=True, key = lambda x: x.end ):
+                        if (tss - obj.end > limit):
+                            continue_flag = False
+                        elif (len(result_list) >= number):
+                            continue_flag = False
+                        elif obj.end < tss - exclude_range:
+                            if init_flag:
+                                result_list.append(obj)
+                                prior_obj = obj
+                                init_flag = False
+                            elif prior_obj.start != obj.start and prior_obj.end != obj.end:
+                                result_list.append(obj)
+                                prior_obj = obj
+                curr_index -= 1
+                if curr_index < min_index:
+                    continue_flag = False
+        return result_list
+ 
                 
 @dataclass(frozen=True)
 class RegionAnno:
