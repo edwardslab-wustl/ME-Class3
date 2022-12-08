@@ -6,6 +6,7 @@ from MEClass3.io_functions import format_args_to_print
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_score
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance
 from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance_2
+from MEClass3.overlap_genes_enhancers_functions import overlap_enh_genes_by_distance_new_bed
 
 def exec_overlap_genes_enhancers(args):
     with open(args.logfile, 'w') as log_FH:   
@@ -42,6 +43,16 @@ def exec_overlap_genes_enhancers(args):
                                                       args.promoter_region,
                                                       args.index_size,
                                                       args.max_distance)
+        elif args.type == 'newBed_dist':
+            results = overlap_enh_genes_by_distance_new_bed(args.gene_file,
+                                                      args.enh_file,
+                                                      args.up_start_idx,
+                                                      args.up_end_idx,
+                                                      args.dn_start_idx,
+                                                      args.dn_end_idx,
+                                                      args.promoter_region,
+                                                      args.index_size,
+                                                      args.max_distance)
         out_data = [ "\t".join(result) for result in results ]
         with open(args.outFile, 'w') as out_FH:
             out_FH.write("\n".join(out_data) + "\n")
@@ -55,7 +66,7 @@ def exec_overlap_genes_enhancers_help(parser):
         default=argparse.SUPPRESS,
         help='enhancer annotation file')
     parser.add_argument('-t', '--type', default='distance',
-        choices=['distance', 'genehancer_score', 'enhancerAtlas_score', 'enhancerAtlas_dist'],
+        choices=['distance', 'genehancer_score', 'enhancerAtlas_score', 'enhancerAtlas_dist', 'newBed_dist'],
         help='type of enhancer file and matching metric. Distance expects bed \
             file of enhancer locations. genehancer_score expects genehancer \
             .csv file with genehancer gene-enhancer connectivity info.' )
@@ -78,7 +89,7 @@ def exec_overlap_genes_enhancers_help(parser):
     parser_distance.add_argument('--promoter_region', type=int, default=5000,
         help='ignore all enhancers within +/- promoter_region bp from the TSS. \
             By default excludes all enhancers +/- 5000bp from TSS.')
-    parser_distance.add_argument('--index_size', type=int, default=1000,
+    parser_distance.add_argument('--index_size', type=int, default=10000,
         help='Size of index used for overlapping enhancers and promoters. Set larger than enhancer/feature size.')
     parser_score = parser.add_argument_group('score arguments')
     parser_score.add_argument('--score_num_enh', type=int, default=5,

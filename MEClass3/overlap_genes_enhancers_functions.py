@@ -84,10 +84,14 @@ def overlap_enh_genes_by_score(gene_file, enhancer_file, enh_type, num_enh, base
     return results
 
 def extract_enh_data_as_dict(enhancer_dict, index_range = 1000, unique_id = None):
+    #cnt = 0
     enh_index = RegionIndex(defaultdict(dict), index_range)
     for symbol, enhancerSet in enhancer_dict.items():
-        for enhancer in enhancerSet.enh_set:
-            enh_index.add_to_index(enhancer)
+        enh_index.add_set_to_index(enhancerSet.enh_set)
+        
+        #for enhancer in enhancerSet.enh_set:
+        #    enh_index.add_to_index(enhancer)
+        #    cnt += 1
     return enh_index
 
 @dataclass
@@ -97,7 +101,7 @@ class RegionIndex:
     
     def add_to_index(self, region):
         pos1 = int(region.start / self.index_range)
-        pos2 = int(region.end / self.index_range)
+        pos2 = int(region.end / self.index_range) + 1
         for i in range(pos1, pos2):
             add_dict_set_2keys(self.reg_index, region.chr, i, region)
         return 
@@ -108,19 +112,18 @@ class RegionIndex:
         return
     
     def merge_to_index_max(self, region_index):
-        #tracker_set = set
         for chr in region_index.reg_index.keys():
             if chr in self.reg_index:
                 for index, region_set in region_index.reg_index[chr].items():
                     if index in self.reg_index[chr]:
-                        new_set = overlap_region_sets_max(region_set, self.reg_index[chr][index])
-                        self.reg_index[chr][index] = new_set
+#                        new_set = overlap_region_sets_max(region_set, self.reg_index[chr][index])
+#                        self.reg_index[chr][index] = new_set
+                        self.add_set_to_index(region_set)
                     else:
                         self.add_set_to_index(region_set)
             else:
                 for index, region_set in region_index.reg_index[chr].items():
                     self.add_set_to_index(region_set)
-            #tracker_set.add(new_region)
         return
     
 def overlap_region_sets_max(region_set_new, region_set_ref):
@@ -180,22 +183,29 @@ def overlap_enh_genes_by_distance_2( gene_file, enhancer_file_list,
                                      promoter_region, index_size, max_distance):
     gene_list = read_gene_file(gene_file)
     enh_index = RegionIndex(defaultdict(dict))
-    init_flag = True
     for enh_file in enhancer_file_list.split(','):
         enh_data_dict = dict()
         enh_data_dict = read_enh_atlas_file(enh_file, enh_data_dict)
         enh_obj_tmp = extract_enh_data_as_dict(enh_data_dict, index_range=index_size)
-        #if init_flag:
-        #    enh_index = enh_obj_tmp
-        #else:
-        #    enh_index.merge_to_index_max(region_index=enh_obj_tmp)
-        #    pass
         enh_index.merge_to_index_max(region_index=enh_obj_tmp)
-        init_flag = False
     overlap_results = find_enh_gene_list_overlap( gene_list, enh_index, up_end_index, dn_end_index, promoter_region, max_distance)
     results = format_distance_results(overlap_results, up_start_index, up_end_index, dn_start_index, dn_end_index)
     return results
-    
+
+def overlap_enh_genes_by_distance_new_bed( gene_file, enhancer_file_list,
+                                     up_start_index, up_end_index, dn_start_index, dn_end_index,
+                                     promoter_region, index_size, max_distance):
+    gene_list = read_gene_file(gene_file)
+    enh_index = RegionIndex(defaultdict(dict))
+    for enh_file in enhancer_file_list.split(','):
+        enh_data_dict = dict()
+        enh_data_dict = read_enh_bed_file(enh_file, enh_data_dict)
+        enh_obj_tmp = extract_enh_data_as_dict(enh_data_dict, index_range=index_size)
+        enh_index.merge_to_index_max(region_index=enh_obj_tmp)
+    overlap_results = find_enh_gene_list_overlap( gene_list, enh_index, up_end_index, dn_end_index, promoter_region, max_distance)
+    results = format_distance_results(overlap_results, up_start_index, up_end_index, dn_start_index, dn_end_index)
+    return results
+
 def find_enh_gene_list_overlap(gene_list, enhancer_index, num_up, num_dn, promoter_region, max_distance = 1000000):
     results = defaultdict(list)
     for gene in gene_list:
@@ -368,6 +378,37 @@ def read_enh_atlas_file(file, result_dict, label='enh_', score_threshold=0.):
                     result_dict[symbol] = GeneEnhSet(symbol, {enh})
     return result_dict
 
+def read_enh_bed_file(file, result_dict, label='enh_'):
+    #chr1:1266920-1267010_ENSG00000242485$MRPL20$chr1$1342693$-      1.239509
+    with open(file, 'r') as FH:
+        count = 0
+        tss = -1
+        symbol ='na'
+        score = -1
+        strand = "+"
+        for line in FH:
+            count += 1
+            line_data = line.strip().split()
+            enh_chr = line_data[0]
+            enh_start = line_data[1]
+            enh_end = line_data[2]
+            region_id = f"{enh_chr}:{enh_start}-{enh_end}"
+            symbol=enh_chr
+            enh = RegionAnno(label + str(count),
+                             region_id,
+                             symbol,
+                             enh_chr,
+                             int(enh_start),
+                             int(enh_end),
+                             strand,
+                             tss,
+                             tss,
+                             score)
+            if symbol in result_dict:
+                result_dict[symbol].add_enh(enh)
+            else:
+                result_dict[symbol] = GeneEnhSet(symbol, {enh})
+    return result_dict
 
 ########
 # OLD

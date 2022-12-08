@@ -69,9 +69,10 @@ class GeneAnno:
             tes = self.txStart
         return tes
 
-    def identify_nearest_up_objects(self, number, exclude_range, limit, object_index) -> list:
+    def identify_nearest_dn_objects(self, number, exclude_range, limit, object_index) -> list:
+        '''dn is higher coord than tss'''
         tss = self.tss()
-        curr_index = int(tss / object_index.index_range)
+        curr_index = int(tss / object_index.index_range)  - 1
         result_list = []
         continue_flag = True
         init_flag = True
@@ -101,9 +102,10 @@ class GeneAnno:
                     continue_flag = False
         return result_list
     
-    def identify_nearest_dn_objects(self, number, exclude_range, limit, object_index) -> list:
+    def identify_nearest_up_objects(self, number, exclude_range, limit, object_index) -> list:
+        '''up is upstream of gene, i.e. lower coord than tss'''
         tss = self.tss()
-        curr_index = int(tss / object_index.index_range)
+        curr_index = int(tss / object_index.index_range) + 1
         result_list = []
         continue_flag = True
         init_flag = True
