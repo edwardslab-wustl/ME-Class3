@@ -1,6 +1,7 @@
 
 import sys
 import argparse
+import os
 
 import numpy as np
 import pandas as pd
@@ -27,6 +28,7 @@ def exec_merge_data(args):
             df_interp = ''
             header_list = list()
             df_expr = df_expr_all.loc[:, [sample_pair.tag1, sample_pair.tag2]]
+            rm_tmp_interp_file_flag = False
             # Remove Duplicates
             # df_expr = df_expr.groupby(df_expr.index).first()
             if args.floor_expr:    # Floor expression values for selected cell types
@@ -50,29 +52,45 @@ def exec_merge_data(args):
                 print_to_log(log_FH, f"\tadding mC tss interp data: " + interp_file + "\n")
                 if args.filter_diff_expr:
                     interp_file = filter_interp_file(interp_file, gene_keep_set,'TSS')
+                    rm_tmp_interp_file_flag = True
                 df_interp = add_tss_interp(df_interp, interp_file, 'mC', args)
                 header_list = add_interp_header(interp_file, header_list, args)
+                if rm_tmp_interp_file_flag: 
+                    os.remove(interp_file)
+                    print_to_log(log_FH, f"removed temp file: {interp_file}")
             if args.mC_enh:
                 interp_file = args.file_path + "/" + sample_pair.name + args.mC_enh_base + ".csv"
                 print_to_log(log_FH, "\tadding mC enh interp data: " + interp_file + "\n")
                 if args.filter_diff_expr:
                     interp_file = filter_interp_file(interp_file, gene_keep_set,'ENH')
+                    rm_tmp_interp_file_flag = True
                 df_interp = add_enh_interp(df_interp, interp_file, 'mC', args)
                 header_list = add_interp_header(interp_file, header_list, args)
+                if rm_tmp_interp_file_flag: 
+                    os.remove(interp_file)
+                    print_to_log(log_FH, f"removed temp file: {interp_file}")
             if args.hmC_tss:
                 interp_file = args.file_path + "/" + sample_pair.name + args.hmC_tss_base + ".csv"
                 print_to_log(log_FH, f"\tadding hmC tss interp data: " + interp_file + "\n")
                 if args.filter_diff_expr:
                     interp_file = filter_interp_file(interp_file, gene_keep_set,'TSS')
+                    rm_tmp_interp_file_flag = True
                 df_interp = add_tss_interp(df_interp, interp_file, 'hmC', args)
                 header_list = add_interp_header(interp_file, header_list, args)
+                if rm_tmp_interp_file_flag: 
+                    os.remove(interp_file)
+                    print_to_log(log_FH, f"removed temp file: {interp_file}")
             if args.hmC_enh:
                 interp_file = args.file_path + "/" + sample_pair.name + args.hmC_enh_base + ".csv"
                 print_to_log(log_FH, "\tadding hmC enh interp data: " + interp_file + "\n")
                 if args.filter_diff_expr:
                     interp_file = filter_interp_file(interp_file, gene_keep_set,'ENH')
+                    rm_tmp_interp_file_flag = True
                 df_interp = add_enh_interp(df_interp, interp_file, 'hmC', args)
                 header_list = add_interp_header(interp_file, header_list, args)
+                if rm_tmp_interp_file_flag: 
+                    os.remove(interp_file)
+                    print_to_log(log_FH, f"removed temp file: {interp_file}")
             df_interp['gene_id'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[0])
             df_interp['sample_name'] = df_interp['gene_id-sample_name'].apply(lambda x: x.split('-')[1])    
             df_interp = df_interp.set_index('gene_id-sample_name')
