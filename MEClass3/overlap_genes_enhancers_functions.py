@@ -315,7 +315,7 @@ def read_geneHancer(file, result_dict, enh_score_threshold=0., connection_score_
             if line_count == 1:
                 continue  # skip header
             # chrom,source,feature name,start,end,score,strand,frame,attributes
-            line_data = line.strip().split(',')
+            line_data = line.strip().split('\t')
             enh_score = float(line_data[5])
             if enh_score >= enh_score_threshold:
                 attribute_list = line_data[8].split(';')
