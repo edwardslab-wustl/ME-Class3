@@ -46,10 +46,12 @@ def exec_classify(args):
             for train_index, test_index in kf.split(gene_id_list): # K-Fold gene split
                 I_train, I_test = gene_id_list[train_index], gene_id_list[test_index]
                 df_kf = df.copy()
-                idx = df_kf.index[ ~df_kf['gene_id'].isin(I_test) ]
+                #idx = df_kf.index[ ~df_kf['gene_id'].isin(I_test) ]
+                idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & ~df_kf['gene_id'].isin(I_test) ]
                 df_kf.loc[idx, 'clf_flag'] = 'train'
                 del idx
-                idx = df_kf.index[ df_kf['gene_id'].isin(I_test) ]
+                #idx = df_kf.index[ df_kf['gene_id'].isin(I_test) ]
+                idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & df_kf['gene_id'].isin(I_test) ]
                 df_kf.loc[idx, 'clf_flag'] = 'test'
                 del idx
                 # Select traing data set
