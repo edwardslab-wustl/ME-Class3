@@ -47,7 +47,7 @@ def exec_classify(args):
                 I_train, I_test = gene_id_list[train_index], gene_id_list[test_index]
                 df_kf = df.copy()
                 #idx = df_kf.index[ ~df_kf['gene_id'].isin(I_test) ]
-                idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & ~df_kf['gene_id'].isin(I_test) ]
+                idx = df_kf.index[ ((df_kf.expr_flag==-1) | (df_kf.expr_flag==1)) & df_kf['gene_id'].isin(I_train) ]
                 df_kf.loc[idx, 'clf_flag'] = 'train'
                 del idx
                 #idx = df_kf.index[ df_kf['gene_id'].isin(I_test) ]
@@ -61,6 +61,12 @@ def exec_classify(args):
                 #Setup classifier and run it
                 df_kf_train.drop(drop_col_list, axis=1, inplace=True)
                 df_kf_test.drop(drop_col_list, axis=1, inplace=True)
+                if args.data_type != 'all':
+                    df_kf_test = df_kf_test.loc[:, df_kf_test.columns.str.startswith(args.data_type)]
+                    df_kf_train = df_kf_train.loc[:, df_kf_train.columns.str.startswith(args.data_type)]
+                    df_fi = df_fi.loc[:, df_fi.columns.str.startswith(args.data_type)]
+                    #df_kf_train.drop(~df_kf_train.columns.str.contains(args.data_type), axis=1, inplace=True)
+                    #df_kf_test.drop(~df_kf_test.columns.str.contains(args.data_type), axis=1, inplace=True)
                 clf = RandomForestClassifier(n_estimators=args.num_trees, n_jobs=args.threads) 
                 clf.fit(df_kf_train, y_train)
                 y_test_prob = clf.predict_proba(df_kf_test)
@@ -72,7 +78,7 @@ def exec_classify(args):
                     df.loc[idx, 'prob_up'] = y_test_prob[i][1]
                 # Feature importance
                 if args.featureImportance:
-                    df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=feature_column_names))] )
+                    df_fi = pd.concat( [df_fi, (pd.DataFrame( [(clf.feature_importances_)],  columns=clf.feature_names_in_))] )
                 df_kf.drop(df_kf.index, inplace=True)
                 df_kf_train.drop(df_kf_train.index, inplace=True)
                 df_kf_test.drop(df_kf_test.index, inplace=True)
@@ -234,6 +240,9 @@ def exec_classify_help(parser):
         default=argparse.SUPPRESS,
         required=True, help='Input list of sample names and file locations for pairings.')
     parser_classifier = parser.add_argument_group('classifier arguments')
+    parser_classifier.add_argument('--data_type', default="all", 
+        choices=["all", "mC", "hmC", "other"],
+        help='subset of data for classifier')
     parser_classifier.add_argument('--num_trees',
         type=int, default=5001, help='Number of trees for Random Forest Classifier')
     parser_classifier.add_argument('-t', '--threads',
