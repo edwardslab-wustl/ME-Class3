@@ -47,6 +47,8 @@ def exec_interp(args):
                     anno_fail_dict = add_fail( 'gene_length', gene.id, anno_fail_dict)
                 elif args.filter_cdsStats and ( (gene.cdsStartStat != 'cmpl') or (gene.cdsEndStat != 'cmpl') ):
                     anno_fail_dict = add_fail( 'cdsStats', gene.id, anno_fail_dict)
+                elif args.filter_autosome and ( (gene.chr == 'chrX') or (gene.chr == 'chrY') ):
+                    anno_fail_dict = add_fail( 'autosome', gene.id, anno_fail_dict)
                 else:
                     anno_list_postfilter.append(gene)
             fail_text = 'genes'
@@ -121,6 +123,7 @@ def exec_interp_help(parser):
     parser_filter.add_argument('--min_gene_meth', type=float, default=0.2, help='Must have at least 1 CpG with at least this meth diff')
     parser_filter.add_argument('--min_gene_length', type=int, default=5000, help='Min. gene length, ideally shorter than window size')
     parser_filter.add_argument('--filter_cdsStats', action='store_true', default=True, help='Whether to filter on the cdsStart and cdsEnd as cmpl' )
+    parser_filter.add_argument('--filter_autosome', action='store_true', default=False, help='Filter out chrX annd chrY' )
     parser_filter.add_argument('--min_reg_cpgs', type=int, default=2, help='Minimum CpGs assayed in region')
     parser_interp = parser.add_argument_group('interpolation arguments')
     parser_interp.add_argument('--sigma', type=int, default=50, help='Value of sigma for Gaussian smoothing')
