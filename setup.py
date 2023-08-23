@@ -32,7 +32,7 @@ setup(name='meclass3',
         install_requires=[
             'numpy',
             'pandas',
-            'sklearn',
+            'scikit-learn',
             'scipy',
             'matplotlib',
         ],
