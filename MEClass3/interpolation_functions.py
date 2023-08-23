@@ -105,37 +105,41 @@ def interp_gene(gene, dict_bed, sample_id, args):
     cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
     tss = gene.tss()
     tes = gene.tes()
-    dict_cpg = dict_bed[gene.chr]
-    # ----------------------------------------------------------------------------
-    # Methylation based gene filters
-    # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
-    # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
-    #-----------------------------------------------------------------------------    
-    for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
-        if cpos in dict_cpg:
-            dmet_tmp.append(dict_cpg[cpos])
-            cpos_tmp.append(cpos)
-    filter_flag = False
-    if len(dmet_tmp) < args.min_gene_cpgs:
-        result = ("cpg", gene.id)
-        filter_flag = True
-    elif max(dmet_tmp) < args.min_gene_meth:
-        filter_flag = True
-        result = ("meth_diff", gene.id)
-    else:
-        if not args.flankNorm: # Endpoint correction will be used in this case
-            anchor_window = 0
-    #    if args.flankNorm:
-        for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+    if gene.chr in dict_cpg:
+        dict_cpg = dict_bed[gene.chr]
+        # ----------------------------------------------------------------------------
+        # Methylation based gene filters
+        # 3. Genes with <40 CpGs assayed within +/-5kb of the TSS
+        # 4. Genes with all CpGs within +/-5 kb of the TSS had <0.2 methylation change
+        #-----------------------------------------------------------------------------    
+        for cpos in range( (tss-interp_bin), (tss+interp_bin)+1 ):            
             if cpos in dict_cpg:
-                dmet_dat.append(dict_cpg[cpos])
-                cpos_dat.append(cpos)
-        # Missing anchor            
-        if args.flankNorm and \
-            (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
-            ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+                dmet_tmp.append(dict_cpg[cpos])
+                cpos_tmp.append(cpos)
+        filter_flag = False
+        if len(dmet_tmp) < args.min_gene_cpgs:
+            result = ("cpg", gene.id)
             filter_flag = True
-            result = ("flankNorm", gene.id)
+        elif max(dmet_tmp) < args.min_gene_meth:
+            filter_flag = True
+            result = ("meth_diff", gene.id)
+        else:
+            if not args.flankNorm: # Endpoint correction will be used in this case
+                anchor_window = 0
+        #    if args.flankNorm:
+            for cpos in range( gene.txStart-(interp_bin+anchor_window), gene.txEnd+(interp_bin+anchor_window)+1 ):
+                if cpos in dict_cpg:
+                    dmet_dat.append(dict_cpg[cpos])
+                    cpos_dat.append(cpos)
+            # Missing anchor            
+            if args.flankNorm and \
+                (( cpos_dat[0] not in range( gene.txStart-(interp_bin+anchor_window), gene.txStart-interp_bin ) ) or \
+                ( cpos_dat[-1] not in range( gene.txEnd+interp_bin+1, gene.txEnd+(interp_bin+anchor_window)+1 ) )):
+                filter_flag = True
+                result = ("flankNorm", gene.id)
+    else:
+        filter_flag = True
+        result=("noDataForChr", gene.id)
     if not filter_flag:
         # Gather interpolated data
         interpolated_dmet_data = Interpolation(cpos_dat, dmet_dat, gene.txStart, gene.txEnd, gene.strand, reg_type, args).dat_proc()
