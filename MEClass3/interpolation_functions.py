@@ -105,7 +105,7 @@ def interp_gene(gene, dict_bed, sample_id, args):
     cpos_dat, cpos_tmp, dmet_dat, dmet_tmp = [], [], [], []
     tss = gene.tss()
     tes = gene.tes()
-    if gene.chr in dict_cpg:
+    if gene.chr in dict_bed:
         dict_cpg = dict_bed[gene.chr]
         # ----------------------------------------------------------------------------
         # Methylation based gene filters
