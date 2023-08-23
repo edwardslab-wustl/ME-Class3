@@ -67,6 +67,11 @@ def exec_classify(args):
                     df_fi = df_fi.loc[:, df_fi.columns.str.startswith(args.data_type)]
                     #df_kf_train.drop(~df_kf_train.columns.str.contains(args.data_type), axis=1, inplace=True)
                     #df_kf_test.drop(~df_kf_test.columns.str.contains(args.data_type), axis=1, inplace=True)
+                if args.feature_type != 'all':
+                    data_type_str = '-' + args.data_type + '-'
+                    df_kf_test = df_kf_test.loc[:, df_kf_test.columns.str.contains(data_type_str)]
+                    df_kf_train = df_kf_train.loc[:, df_kf_train.columns.str.contains(data_type_str)]
+                    df_fi = df_fi.loc[:, df_fi.columns.str.contains(data_type_str)]
                 clf = RandomForestClassifier(n_estimators=args.num_trees, n_jobs=args.threads) 
                 clf.fit(df_kf_train, y_train)
                 y_test_prob = clf.predict_proba(df_kf_test)
@@ -242,6 +247,9 @@ def exec_classify_help(parser):
     parser_classifier = parser.add_argument_group('classifier arguments')
     parser_classifier.add_argument('--data_type', default="all", 
         choices=["all", "mC", "hmC", "other"],
+        help='subset of data for classifier')
+    parser_classifier.add_argument('--feature_type', default="all", 
+        choices=["all", "tss", "enh"],
         help='subset of data for classifier')
     parser_classifier.add_argument('--num_trees',
         type=int, default=5001, help='Number of trees for Random Forest Classifier')
